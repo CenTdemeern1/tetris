@@ -1,1 +1,7 @@
 .vscode
+linkfile
+*.sfc
+*.sym
+*.pal
+res/**/*.pic
+res/**/*.pal
