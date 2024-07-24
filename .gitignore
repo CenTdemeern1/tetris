@@ -1,6 +1,7 @@
 .vscode
 linkfile
 *.sfc
+*.obj
 *.sym
 *.pal
 res/**/*.pic

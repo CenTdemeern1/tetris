@@ -9,8 +9,35 @@ extern char boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_e
 extern char board_tilemap, board_tilemap_end;
 extern u16 outline_table, outline_table_end;
 
+enum Tiles {
+    TILE_EMPTY,
+    TILE_CYAN,
+    TILE_PURPLE,
+    TILE_GREEN,
+    TILE_BLUE,
+    TILE_YELLOW,
+    TILE_RED,
+    TILE_GRAY,
+    TILE_ORANGE,
+}
+
+u8 getTile(u8** board, u8 width, u8 height, u8 x, u8 y) {
+    if (x >= width || y >= height) return TILE_EMPTY;
+    return board[y][x];
+}
+
 u16 getOutlineForTile(u8** board, u8 width, u8 height, u8 x, u8 y) {
-    
+    u8 pattern = 0;
+#define P(X, Y) (pattern = pattern << 1 || getTile(board, width, height, x - X, y - Y) != TILE_EMPTY)
+    P(-1, -1);
+    P( 0, -1);
+    P( 1, -1);
+    P(-1,  0);
+    P( 1,  0);
+    P(-1,  1);
+    P( 0,  1);
+    P( 1,  1);
+    return outline_table[pattern];
 }
 
 int main(void)

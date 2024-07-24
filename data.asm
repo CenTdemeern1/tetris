@@ -18,10 +18,10 @@ minoset2_img_end:
 minoset2_pal: .incbin "res/minoset2.pal"
 minoset2_pal_end:
 
-board_tilemap: .incbin "data/compiled/emptyboard_edgeless.bin"
+board_tilemap: .incbin "data/generated/emptyboard.bin"
 board_tilemap_end:
 
-outline_table: .incbin "data/compiled/outline_table.bin"
+outline_table: .incbin "data/generated/outline_table.bin"
 outline_table_end:
 
 .ends
