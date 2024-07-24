@@ -7,6 +7,11 @@
 extern char tilfont, palfont;
 extern char boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end, minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
 extern char board_tilemap, board_tilemap_end;
+extern u16 outline_table, outline_table_end;
+
+u16 getOutlineForTile(u8** board, u8 width, u8 height, u8 x, u8 y) {
+    
+}
 
 int main(void)
 {

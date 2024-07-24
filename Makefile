@@ -10,9 +10,9 @@ include ${PVSNESLIB_HOME}/devkitsnes/snes_rules
 # ROMNAME is used in snes_rules file
 export ROMNAME := tetris
 
-all: bitmaps tilemaps $(ROMNAME).sfc
+all: bitmaps generators $(ROMNAME).sfc
 
-clean: cleanBuildRes cleanRom cleanGfx
+clean: cleanBuildResOverride cleanRom cleanGfxOverride cleanGeneratedData
 	
 #---------------------------------------------------------------------------------
 pvsneslibfont.pic: res/pvsneslibfont.png
@@ -31,14 +31,34 @@ boardedges.pic: res/boardedges.png
 	@echo convert boardedges ... $(notdir $@)
 	$(GFXCONV) -s 16 -o 16 -u 16 -t png -i $<
 
-# #---------------------------------------------------------------------------------
-# tilemap.bin: mockup.json
-# 	@echo convert tilemap ... $(notdir $@)
-# 	python3 convert_mockup_tilemap.py
+#---------------------------------------------------------------------------------
+jsonTilemaps: emptyboard.bin emptyboard_edgeless.bin
+
+emptyboard.bin: data/emptyboard.json
+	@echo convert emptyboard json tilemap ... $(notdir $@)
+	python3 generators/convert_json_tilemap.py $<
+
+emptyboard_edgeless.bin: data/emptyboard_edgeless.json
+	@echo convert emptyboard_edgeless json tilemap ... $(notdir $@)
+	python3 generators/convert_json_tilemap.py $<
+
+outlineTable: generators/generate_outline_table.py
+	@echo generate outline table ...
+	python3 $<
 
 bitmaps : pvsneslibfont.pic minoset1.pic minoset2.pic boardedges.pic
-tilemaps : #tilemap.bin
+generators : jsonTilemaps outlineTable
 
-cleanGfx:
+cleanGeneratedData:
+	@echo clean generated data
+	@rm -f data/generated/*
+
+cleanBuildResOverride: cleanBuildRes cleanStraySymbols
+
+cleanStraySymbols:
+	@echo clean stray debugging symbols
+	@rm -f *.sym
+
+cleanGfxOverride:
 	@echo clean graphics data \(override\)
 	@rm -f **/*.pic **/*.map **/*.pal **/*.pc7 **/*.mp7 **/*.til **/*.m16 **/*.b16 **/*.o16 **/*.t16
