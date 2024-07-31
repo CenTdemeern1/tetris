@@ -1,3 +1,4 @@
+.DS_Store
 .vscode
 linkfile
 *.sfc
@@ -6,3 +7,4 @@ linkfile
 *.pal
 res/**/*.pic
 res/**/*.pal
+.clangd

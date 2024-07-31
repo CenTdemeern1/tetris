@@ -24,4 +24,7 @@ board_tilemap_end:
 outline_table: .incbin "data/generated/outline_table.bin"
 outline_table_end:
 
+tetromino_table: .incbin "data/generated/tetromino_table.bin"
+tetromino_table_end:
+
 .ends

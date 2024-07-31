@@ -46,8 +46,12 @@ outlineTable: generators/generate_outline_table.py
 	@echo generate outline table ...
 	python3 $<
 
+tetrominoTable: generators/generate_tetromino_table.py
+	@echo generate tetromino table ...
+	python3 $<
+
 bitmaps : pvsneslibfont.pic minoset1.pic minoset2.pic boardedges.pic
-generators : jsonTilemaps outlineTable
+generators : jsonTilemaps outlineTable tetrominoTable
 
 cleanGeneratedData:
 	@echo clean generated data
