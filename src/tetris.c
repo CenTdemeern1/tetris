@@ -5,10 +5,11 @@
 #include "tetris_helpers.h"
 #include "msu1.h"
 
-extern char tilfont, palfont;
-extern char boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end, minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
+extern u8 tilfont, palfont;
+extern u8 boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end, minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
 extern char board_tilemap, board_tilemap_end;
 extern u16 outline_table[256], outline_table_end;
+extern TetrominoRotationsData tetromino_table[7], tetromino_table_end;
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
@@ -39,6 +40,14 @@ const u16 BACKGROUND_TILES[8] = {
 
 const u16 BACKGROUND_TILE_EMPTY = TILE(0, 0, 0, 0, 0);
 const u16 BACKGROUND_TILE_EMPTY_BOARD = TILE(1, 0, 0, 0, 0);
+
+const u8 TETROMINO_TILES[7] = {
+    0, 1, 2, 3, 4, 5, 7 // Main purpose: skip the gray mino
+};
+
+const u8 TETROMINO_PALETTES[7] = {
+    0, 0, 0, 0, 1, 1, 1
+};
 
 void setBackgroundTile(u16 background[TILEMAP_TILE_NUMBER_32x32], u8 x, u8 y, u16 tile)
 {
@@ -155,9 +164,10 @@ int main(void)
     outlineTile(board, background0, board_width, board_height, 8, 20);
     outlineTile(board, background0, board_width, board_height, 8, 21);
     outlineTile(board, background0, board_width, board_height, 9, 21);
-    oamSet(0 * OAM_ENTRY_SIZE, 0, 0, 3, false, false, 0x00, 0);
-
-    free(board);
+    u8 i;
+    for (i = 0; i < 28; i++) {
+        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[i >> 2], TETROMINO_PALETTES[i >> 2]);
+    }
 
     /*// Draw a wonderful text :P
     consoleDrawText(13, 14, "Cooool!");
@@ -176,7 +186,6 @@ int main(void)
         MSU1_TRACK = 1; // Track 1
         msu1_found = true;
     }
-    free(ident);
 
     // dmaFillVram((u8*)0x2001, 0x0000, 65536);
     // setPaletteColor(0, RGB5(0x10 >> 3, 0x10 >> 3, 0x12 >> 3));
@@ -204,7 +213,13 @@ int main(void)
 
         rotation_timer++;
         if (rotation_timer == 360) rotation_timer = 0;
-        oamSetXY(0, COSINE[rotation_timer] >> 1, SINE[rotation_timer] >> 1);
+        u8 i;
+        for (i = 0; i < 28; i++) {
+            u8 t = i >> 2;
+            u8 p = i & 3;
+            u16 ti = (rotation_timer + t * 51) % 360;
+            oamSetXY(i * OAM_ENTRY_SIZE, (COSINE[ti] >> 1) + (tetromino_table[t][0][p].x << 3) + 48, (SINE[ti] >> 1) + (tetromino_table[t][0][p].y << 3) + 48);
+        }
     }
     return 0;
 }
