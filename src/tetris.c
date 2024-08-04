@@ -1,5 +1,7 @@
 #include <snes.h>
 #include <string.h>
+#include "snes/background.h"
+#include "snes/video.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
 #include "tetris_helpers.h"
@@ -46,7 +48,7 @@ const u8 TETROMINO_TILES[7] = {
 };
 
 const u8 TETROMINO_PALETTES[7] = {
-    0, 0, 0, 0, 1, 1, 1
+    4, 0, 4, 0, 5, 1, 5
 };
 
 void setBackgroundTile(u16 background[TILEMAP_TILE_NUMBER_32x32], u8 x, u8 y, u16 tile)
@@ -133,6 +135,8 @@ int main(void)
     bgInitTileSet(0, &boardedges_img, &boardedges_pal, 0, (&boardedges_img_end - &boardedges_img), (&boardedges_pal_end - &boardedges_pal), BG_16COLORS, 0x2000);
     bgInitTileSet(0, &minoset1_img, &minoset1_pal, 1, (&minoset1_img_end - &minoset1_img), (&minoset1_pal_end - &minoset1_pal), BG_16COLORS, 0x2200);
     bgInitTileSet(0, &minoset2_img, &minoset2_pal, 2, (&minoset2_img_end - &minoset2_img), (&minoset2_pal_end - &minoset2_pal), BG_16COLORS, 0x2240);
+    setPalette(&minoset1_pal, 0xC0, (&minoset1_pal_end - &minoset1_pal));
+    setPalette(&minoset2_pal, 0xD0, (&minoset2_pal_end - &minoset2_pal));
 
     // Now Put in 16 color mode and disable Bgs except current
     setMode(BG_MODE1, 0);
@@ -192,6 +196,9 @@ int main(void)
 
     // Wait for nothing :P
     setScreenOn();
+    // bgSetDisable(4); // OAM
+    bgSetEnableSub(0);
+    setColorEffect(CM_SUBBGOBJ_ENABLE, CM_MSCR_PAL47);
 
     if (msu1_found)
     {
