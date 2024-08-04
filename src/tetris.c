@@ -108,6 +108,39 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
 #undef O
 }
 
+u8 getNextPiece(u8 next_queue[], u8 next_queue_length, u8 piece_bag[], u8 piece_bag_length, u8 pieces_left_in_bag) {
+    if (piece_bag_length == 0)
+        return rand() % 7; // No piece bag = complete chaos
+    if (pieces_left_in_bag == 0) {
+        // TODO: Load the piece bag from somewhere instead of doing this
+        u8 i;
+        for (i = 0; i < piece_bag_length; i++) {
+            piece_bag[i] = i;
+        }
+        pieces_left_in_bag = piece_bag_length;
+    }
+    u8 random_piece_index = rand() % pieces_left_in_bag;
+    u8 random_piece;
+    u8 i;
+    // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
+    for (i = 0; i < piece_bag_length; i++) {
+        if (piece_bag[i] == 255) continue;
+        if (random_piece_index == 0) {
+            random_piece = piece_bag[i];
+            piece_bag[i] = 255;
+            break;
+        }
+        random_piece_index--;
+    }
+    if (next_queue_length == 0)
+        return random_piece;
+    u8 next_piece = next_queue[0];
+    if (next_queue_length > 1)
+        memmove(next_queue, next_queue + 1, next_queue_length - 1);
+    next_queue[next_queue_length - 1] = random_piece;
+    return next_piece;
+}
+
 int main(void)
 {
     // Init SPC700
@@ -151,6 +184,9 @@ int main(void)
     u8 board_height = 22;
     u8 board[10 * 22];
     memset(&board, TILE_EMPTY, sizeof(board));
+    u8 next_queue[5];
+    u8 piece_bag[7];
+    u8 pieces_left_in_bag;
 
     setTile(board, background0, board_width, board_height, 1, 20, TILE_CYAN);
     setTile(board, background0, board_width, board_height, 2, 20, TILE_PURPLE);
