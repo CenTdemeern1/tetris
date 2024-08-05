@@ -49,12 +49,12 @@ const u8 TETROMINO_TILES[7] = {
 };
 
 const u8 TETROMINO_PALETTES[7] = {
-    4, 0, 4, 0, 5, 1, 5
+    0, 0, 0, 0, 1, 1, 1
 };
 
 struct NextQueue {
-    u8 next_queue[5];
-    u8 piece_bag[7];
+    u8 next_queue[7];
+    u8 piece_bag[14];
     u8 pieces_left_in_bag;
 };
 
@@ -125,36 +125,36 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
 #undef O
 }
 
-u8 getNextPiece(u8 next_queue[], u8 next_queue_length, u8 piece_bag[], u8 piece_bag_length, u8 pieces_left_in_bag) {
+u8 getNextPiece(struct NextQueue next_queue, u8 next_queue_length, u8 piece_bag_length) {
     if (piece_bag_length == 0)
         return rand() % 7; // No piece bag = complete chaos
-    if (pieces_left_in_bag == 0) {
+    if (next_queue.pieces_left_in_bag == 0) {
         // TODO: Load the piece bag from somewhere instead of doing this
         u8 i;
         for (i = 0; i < piece_bag_length; i++) {
-            piece_bag[i] = i;
+            next_queue.piece_bag[i] = i;
         }
-        pieces_left_in_bag = piece_bag_length;
+        next_queue.pieces_left_in_bag = piece_bag_length;
     }
-    u8 random_piece_index = rand() % pieces_left_in_bag;
+    u8 random_piece_index = rand() % next_queue.pieces_left_in_bag;
     u8 random_piece;
     u8 i;
     // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
     for (i = 0; i < piece_bag_length; i++) {
-        if (piece_bag[i] == 255) continue;
+        if (next_queue.piece_bag[i] == 255) continue;
         if (random_piece_index == 0) {
-            random_piece = piece_bag[i];
-            piece_bag[i] = 255;
+            random_piece = next_queue.piece_bag[i];
+            next_queue.piece_bag[i] = 255;
             break;
         }
         random_piece_index--;
     }
     if (next_queue_length == 0)
         return random_piece;
-    u8 next_piece = next_queue[0];
+    u8 next_piece = next_queue.next_queue[0];
     if (next_queue_length > 1)
-        memmove(next_queue, next_queue + 1, next_queue_length - 1);
-    next_queue[next_queue_length - 1] = random_piece;
+        memmove(next_queue.next_queue, next_queue.next_queue + 1, next_queue_length - 1);
+    next_queue.next_queue[next_queue_length - 1] = random_piece;
     return next_piece;
 }
 
@@ -192,11 +192,14 @@ int main(void)
     setMode(BG_MODE1, 0);
     bgSetDisable(1);
     bgSetDisable(2);
+    // bgSetDisable(4); // OAM
+    bgSetEnableSub(0);
+    setColorEffect(CM_SUBBGOBJ_ENABLE, CM_MSCR_PAL47);
 
     // memset((void *)background0, 0, sizeof(background0));
     memcpy((void *)background0, &board_tilemap, sizeof(background0));
 
-    memset(&player1.board, TILE_EMPTY, sizeof(player1.board));
+    memset(&player1, 0, sizeof(player1));
 
     setTile(player1.board, background0, board_width, board_height, 1, 20, TILE_CYAN);
     setTile(player1.board, background0, board_width, board_height, 2, 20, TILE_PURPLE);
@@ -214,9 +217,10 @@ int main(void)
     outlineTile(player1.board, background0, board_width, board_height, 8, 20);
     outlineTile(player1.board, background0, board_width, board_height, 8, 21);
     outlineTile(player1.board, background0, board_width, board_height, 9, 21);
+    u8 piece = getNextPiece(player1.next_queue, 5, 7);
     u8 i;
-    for (i = 0; i < 28; i++) {
-        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[i >> 2], TETROMINO_PALETTES[i >> 2]);
+    for (i = 0; i < 4; i++) {
+        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
     }
 
     char ident[7] = "\0\0\0\0\0\0";
@@ -234,9 +238,6 @@ int main(void)
     }
 
     setScreenOn();
-    // bgSetDisable(4); // OAM
-    bgSetEnableSub(0);
-    setColorEffect(CM_SUBBGOBJ_ENABLE, CM_MSCR_PAL47);
 
     if (msu1_found)
     {
@@ -249,22 +250,16 @@ int main(void)
         MSU1_PLAY_CONTROLS = MSU1_PLAY_CONTROLS_PLAY_LOOP; // Play and loop
     }
 
-    u16 rotation_timer = 0;
-
     while (1)
     {
         WaitForVBlank();
+        // background0[(2 << 5) + 2] = (u16)piece;
         dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
-        showFPScounter();
+        // showFPScounter();
 
-        rotation_timer++;
-        if (rotation_timer == 360) rotation_timer = 0;
         u8 i;
-        for (i = 0; i < 28; i++) {
-            u8 t = i >> 2;
-            u8 p = i & 3;
-            u16 ti = (rotation_timer + t * 51) % 360;
-            oamSetXY(i * OAM_ENTRY_SIZE, (COSINE[ti] >> 1) + (tetromino_table[t][0][p].x << 3) + 48, (SINE[ti] >> 1) + (tetromino_table[t][0][p].y << 3) + 48);
+        for (i = 0; i < 4; i++) {
+            oamSetXY(i * OAM_ENTRY_SIZE, (tetromino_table[piece][0][i].x << 3) + 48, (tetromino_table[piece][0][i].y << 3) + 48);
         }
     }
     return 0;
