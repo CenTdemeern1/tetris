@@ -5,5 +5,5 @@ struct Vec2Di8 {
   char y;
 };
 
-typedef struct Vec2Di8 TetrominoData[4];
+typedef struct Vec2Di8 TetrominoData[4]; // Slow, allegedly
 typedef TetrominoData TetrominoRotationsData[4];

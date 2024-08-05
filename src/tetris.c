@@ -1,6 +1,7 @@
 #include <snes.h>
 #include <string.h>
 #include "snes/background.h"
+#include "snes/console.h"
 #include "snes/video.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
@@ -50,6 +51,22 @@ const u8 TETROMINO_TILES[7] = {
 const u8 TETROMINO_PALETTES[7] = {
     4, 0, 4, 0, 5, 1, 5
 };
+
+struct NextQueue {
+    u8 next_queue[5];
+    u8 piece_bag[7];
+    u8 pieces_left_in_bag;
+};
+
+struct PlayerGameplayData {
+    u8 board[16 * 22];
+    struct NextQueue next_queue;
+};
+
+static u16 background0[TILEMAP_TILE_NUMBER_32x32];
+static u8 board_width = 10;
+static u8 board_height = 22;
+static struct PlayerGameplayData player1;
 
 void setBackgroundTile(u16 background[TILEMAP_TILE_NUMBER_32x32], u8 x, u8 y, u16 tile)
 {
@@ -176,34 +193,27 @@ int main(void)
     bgSetDisable(1);
     bgSetDisable(2);
 
-    u16 background0[TILEMAP_TILE_NUMBER_32x32];
     // memset((void *)background0, 0, sizeof(background0));
     memcpy((void *)background0, &board_tilemap, sizeof(background0));
 
-    u8 board_width = 10;
-    u8 board_height = 22;
-    u8 board[10 * 22];
-    memset(&board, TILE_EMPTY, sizeof(board));
-    u8 next_queue[5];
-    u8 piece_bag[7];
-    u8 pieces_left_in_bag;
+    memset(&player1.board, TILE_EMPTY, sizeof(player1.board));
 
-    setTile(board, background0, board_width, board_height, 1, 20, TILE_CYAN);
-    setTile(board, background0, board_width, board_height, 2, 20, TILE_PURPLE);
-    setTile(board, background0, board_width, board_height, 0, 21, TILE_GREEN);
-    setTile(board, background0, board_width, board_height, 1, 21, TILE_BLUE);
-    setTile(board, background0, board_width, board_height, 7, 20, TILE_YELLOW);
-    setTile(board, background0, board_width, board_height, 8, 20, TILE_RED);
-    setTile(board, background0, board_width, board_height, 8, 21, TILE_GRAY);
-    setTile(board, background0, board_width, board_height, 9, 21, TILE_ORANGE);
-    outlineTile(board, background0, board_width, board_height, 1, 20);
-    outlineTile(board, background0, board_width, board_height, 2, 20);
-    outlineTile(board, background0, board_width, board_height, 0, 21);
-    outlineTile(board, background0, board_width, board_height, 1, 21);
-    outlineTile(board, background0, board_width, board_height, 7, 20);
-    outlineTile(board, background0, board_width, board_height, 8, 20);
-    outlineTile(board, background0, board_width, board_height, 8, 21);
-    outlineTile(board, background0, board_width, board_height, 9, 21);
+    setTile(player1.board, background0, board_width, board_height, 1, 20, TILE_CYAN);
+    setTile(player1.board, background0, board_width, board_height, 2, 20, TILE_PURPLE);
+    setTile(player1.board, background0, board_width, board_height, 0, 21, TILE_GREEN);
+    setTile(player1.board, background0, board_width, board_height, 1, 21, TILE_BLUE);
+    setTile(player1.board, background0, board_width, board_height, 7, 20, TILE_YELLOW);
+    setTile(player1.board, background0, board_width, board_height, 8, 20, TILE_RED);
+    setTile(player1.board, background0, board_width, board_height, 8, 21, TILE_GRAY);
+    setTile(player1.board, background0, board_width, board_height, 9, 21, TILE_ORANGE);
+    outlineTile(player1.board, background0, board_width, board_height, 1, 20);
+    outlineTile(player1.board, background0, board_width, board_height, 2, 20);
+    outlineTile(player1.board, background0, board_width, board_height, 0, 21);
+    outlineTile(player1.board, background0, board_width, board_height, 1, 21);
+    outlineTile(player1.board, background0, board_width, board_height, 7, 20);
+    outlineTile(player1.board, background0, board_width, board_height, 8, 20);
+    outlineTile(player1.board, background0, board_width, board_height, 8, 21);
+    outlineTile(player1.board, background0, board_width, board_height, 9, 21);
     u8 i;
     for (i = 0; i < 28; i++) {
         oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[i >> 2], TETROMINO_PALETTES[i >> 2]);
@@ -253,6 +263,7 @@ int main(void)
     {
         WaitForVBlank();
         dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
+        showFPScounter();
 
         rotation_timer++;
         if (rotation_timer == 360) rotation_timer = 0;
