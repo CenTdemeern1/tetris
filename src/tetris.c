@@ -77,7 +77,7 @@ void setTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width, u8
 {
     if (x >= width || y >= height)
         return;
-    board[x + y * width] = (u8)tile;
+    board[x + (y << 4)] = (u8)tile;
     setBackgroundTile(
         background,
         x + HORIZONTAL_BOARD_OFFSET,
@@ -90,7 +90,7 @@ enum Tiles getTile(u8 board[], u8 width, u8 height, u8 x, u8 y)
 {
     if (x >= width || y >= height)
         return TILE_EMPTY;
-    return (enum Tiles)board[x + y * width];
+    return (enum Tiles)board[x + (y << 4)];
 }
 
 u16 getOutlineForTile(u8 board[], u8 width, u8 height, u8 x, u8 y)
@@ -219,10 +219,6 @@ int main(void)
         oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[i >> 2], TETROMINO_PALETTES[i >> 2]);
     }
 
-    /*// Draw a wonderful text :P
-    consoleDrawText(13, 14, "Cooool!");
-    consoleDrawText(13, 15, "%x", (int)(char *)background0);*/
-
     char ident[7] = "\0\0\0\0\0\0";
     strncpy(ident, MSU1_IDENT, 6);
     bool msu1_found;
@@ -237,10 +233,6 @@ int main(void)
         msu1_found = true;
     }
 
-    // dmaFillVram((u8*)0x2001, 0x0000, 65536);
-    // setPaletteColor(0, RGB5(0x10 >> 3, 0x10 >> 3, 0x12 >> 3));
-
-    // Wait for nothing :P
     setScreenOn();
     // bgSetDisable(4); // OAM
     bgSetEnableSub(0);
