@@ -17,6 +17,14 @@ minoset2_img: .incbin "res/minoset2.pic"
 minoset2_img_end:
 minoset2_pal: .incbin "res/minoset2.pal"
 minoset2_pal_end:
+ghostpieceset1_img: .incbin "res/ghostpieceset1.pic"
+ghostpieceset1_img_end:
+ghostpieceset1_pal: .incbin "res/ghostpieceset1.pal"
+ghostpieceset1_pal_end:
+ghostpieceset2_img: .incbin "res/ghostpieceset2.pic"
+ghostpieceset2_img_end:
+ghostpieceset2_pal: .incbin "res/ghostpieceset2.pal"
+ghostpieceset2_pal_end:
 
 board_tilemap: .incbin "data/generated/emptyboard.bin"
 board_tilemap_end:

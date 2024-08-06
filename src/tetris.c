@@ -9,7 +9,9 @@
 #include "msu1.h"
 
 extern u8 tilfont, palfont;
-extern u8 boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end, minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
+extern u8 boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end;
+extern u8 minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
+extern u8 ghostpieceset1_img, ghostpieceset1_img_end, ghostpieceset1_pal, ghostpieceset1_pal_end, ghostpieceset2_img, ghostpieceset2_img_end, ghostpieceset2_pal, ghostpieceset2_pal_end;
 extern char board_tilemap, board_tilemap_end;
 extern u16 outline_table[256], outline_table_end;
 extern TetrominoRotationsData tetromino_table[7], tetromino_table_end;
@@ -53,14 +55,16 @@ const u8 TETROMINO_PALETTES[7] = {
 };
 
 struct NextQueue {
-    u8 next_queue[7];
-    u8 piece_bag[14];
+    u8 next_queue[8];
+    u8 piece_bag[14]; // Support at most 14-bags
     u8 pieces_left_in_bag;
 };
 
 struct PlayerGameplayData {
-    u8 board[16 * 22];
     struct NextQueue next_queue;
+    u8 currentPiece;
+    u8 heldPiece;
+    u8 board[16 * 22];
 };
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
@@ -125,37 +129,48 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
 #undef O
 }
 
-u8 getNextPiece(struct NextQueue next_queue, u8 next_queue_length, u8 piece_bag_length) {
+u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag_length) {
     if (piece_bag_length == 0)
         return rand() % 7; // No piece bag = complete chaos
-    if (next_queue.pieces_left_in_bag == 0) {
+    if (next_queue->pieces_left_in_bag == 0) {
         // TODO: Load the piece bag from somewhere instead of doing this
         u8 i;
         for (i = 0; i < piece_bag_length; i++) {
-            next_queue.piece_bag[i] = i;
+            next_queue->piece_bag[i] = i;
         }
-        next_queue.pieces_left_in_bag = piece_bag_length;
+        next_queue->pieces_left_in_bag = piece_bag_length;
     }
-    u8 random_piece_index = rand() % next_queue.pieces_left_in_bag;
+    u8 random_piece_index = rand() % next_queue->pieces_left_in_bag;
     u8 random_piece;
     u8 i;
     // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
     for (i = 0; i < piece_bag_length; i++) {
-        if (next_queue.piece_bag[i] == 255) continue;
+        if (next_queue->piece_bag[i] == 255) continue;
         if (random_piece_index == 0) {
-            random_piece = next_queue.piece_bag[i];
-            next_queue.piece_bag[i] = 255;
+            random_piece = next_queue->piece_bag[i];
+            next_queue->piece_bag[i] = 255;
             break;
         }
         random_piece_index--;
     }
+    next_queue->pieces_left_in_bag--;
     if (next_queue_length == 0)
         return random_piece;
-    u8 next_piece = next_queue.next_queue[0];
+    u8 next_piece = next_queue->next_queue[0];
     if (next_queue_length > 1)
-        memmove(next_queue.next_queue, next_queue.next_queue + 1, next_queue_length - 1);
-    next_queue.next_queue[next_queue_length - 1] = random_piece;
+        memmove(next_queue->next_queue, next_queue->next_queue + 1, next_queue_length - 1);
+    next_queue->next_queue[next_queue_length - 1] = random_piece;
     return next_piece;
+}
+
+void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
+    u8 piece = getNextPiece(&player->next_queue, 5, 7);
+    u8 i;
+    for (i = sprite_id_start; i < sprite_id_start + 4; i++) {
+        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
+        oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece] + 8, TETROMINO_PALETTES[piece] + 4);
+    }
+    player->currentPiece = piece;
 }
 
 int main(void)
@@ -170,6 +185,10 @@ int main(void)
     oamInitGfxSet(&minoset1_img, (&minoset1_img_end - &minoset1_img), &minoset1_pal, (&minoset1_pal_end - &minoset1_pal), 0, 0x0000, OBJ_SIZE8_L16);
     dmaCopyVram(&minoset2_img, 0x0040, (&minoset2_img_end - &minoset2_img));
     setPalette(&minoset2_pal, 0x90, (&minoset2_pal_end - &minoset2_pal));
+    dmaCopyVram(&ghostpieceset1_img, 0x0080, (&ghostpieceset1_img_end - &ghostpieceset1_img));
+    setPalette(&ghostpieceset1_pal, 0xC0, (&ghostpieceset1_pal_end - &ghostpieceset1_pal));
+    dmaCopyVram(&ghostpieceset2_img, 0x00C0, (&ghostpieceset2_img_end - &ghostpieceset2_img));
+    setPalette(&ghostpieceset2_pal, 0xD0, (&ghostpieceset2_pal_end - &ghostpieceset2_pal));
     // oamInitGfxAttr(0x6800, OBJ_SIZE8_L16);
 
     // Initialize text console with our font
@@ -185,8 +204,6 @@ int main(void)
     bgInitTileSet(0, &boardedges_img, &boardedges_pal, 0, (&boardedges_img_end - &boardedges_img), (&boardedges_pal_end - &boardedges_pal), BG_16COLORS, 0x2000);
     bgInitTileSet(0, &minoset1_img, &minoset1_pal, 1, (&minoset1_img_end - &minoset1_img), (&minoset1_pal_end - &minoset1_pal), BG_16COLORS, 0x2200);
     bgInitTileSet(0, &minoset2_img, &minoset2_pal, 2, (&minoset2_img_end - &minoset2_img), (&minoset2_pal_end - &minoset2_pal), BG_16COLORS, 0x2240);
-    setPalette(&minoset1_pal, 0xC0, (&minoset1_pal_end - &minoset1_pal));
-    setPalette(&minoset2_pal, 0xD0, (&minoset2_pal_end - &minoset2_pal));
 
     // Now Put in 16 color mode and disable Bgs except current
     setMode(BG_MODE1, 0);
@@ -217,11 +234,6 @@ int main(void)
     outlineTile(player1.board, background0, board_width, board_height, 8, 20);
     outlineTile(player1.board, background0, board_width, board_height, 8, 21);
     outlineTile(player1.board, background0, board_width, board_height, 9, 21);
-    u8 piece = getNextPiece(player1.next_queue, 5, 7);
-    u8 i;
-    for (i = 0; i < 4; i++) {
-        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
-    }
 
     char ident[7] = "\0\0\0\0\0\0";
     strncpy(ident, MSU1_IDENT, 6);
@@ -255,11 +267,21 @@ int main(void)
         WaitForVBlank();
         // background0[(2 << 5) + 2] = (u16)piece;
         dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
-        // showFPScounter();
+        showFPScounter();
+        // consoleDrawText(1, 1, "%x ", (u32)player1.next_queue.piece_bag[0]);
+        // consoleDrawText(4, 1, "%x ", (u32)player1.next_queue.piece_bag[1]);
+        // consoleDrawText(7, 1, "%x ", (u32)player1.next_queue.piece_bag[2]);
+        // consoleDrawText(10, 1, "%x ", (u32)player1.next_queue.piece_bag[3]);
+        // consoleDrawText(13, 1, "%x ", (u32)player1.next_queue.piece_bag[4]);
+        // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
+        // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
+        // WaitForVBlank();
 
+        nextPiece(&player1, 0);
         u8 i;
         for (i = 0; i < 4; i++) {
-            oamSetXY(i * OAM_ENTRY_SIZE, (tetromino_table[piece][0][i].x << 3) + 48, (tetromino_table[piece][0][i].y << 3) + 48);
+            oamSetXY(i * OAM_ENTRY_SIZE, (tetromino_table[player1.currentPiece][0][i].x << 3) + 64, (tetromino_table[player1.currentPiece][0][i].y << 3) + 47);
+            oamSetXY((i + 4) * OAM_ENTRY_SIZE, (tetromino_table[player1.currentPiece][0][i].x << 3) + 64, (tetromino_table[player1.currentPiece][0][i].y << 3) + 151);
         }
     }
     return 0;

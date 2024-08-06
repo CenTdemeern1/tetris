@@ -1,0 +1,2 @@
+0-3 = Player 1 tetromino
+4-7 = Player 1 ghost piece

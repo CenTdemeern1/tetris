@@ -26,6 +26,12 @@ minoset1.pic: res/minoset1.png
 minoset2.pic: res/minoset2.png
 	@echo convert minoset2 ... $(notdir $@)
 	$(GFXCONV) -s 16 -o 16 -u 16 -t png -i $<
+ghostpieceset1.pic: res/ghostpieceset1.png
+	@echo convert ghostpieceset1 ... $(notdir $@)
+	$(GFXCONV) -s 16 -o 16 -u 16 -t png -i $<
+ghostpieceset2.pic: res/ghostpieceset2.png
+	@echo convert ghostpieceset2 ... $(notdir $@)
+	$(GFXCONV) -s 16 -o 16 -u 16 -t png -i $<
 
 boardedges.pic: res/boardedges.png
 	@echo convert boardedges ... $(notdir $@)
@@ -50,7 +56,7 @@ tetrominoTable: generators/generate_tetromino_table.py
 	@echo generate tetromino table ...
 	python3 $<
 
-bitmaps : pvsneslibfont.pic minoset1.pic minoset2.pic boardedges.pic
+bitmaps : pvsneslibfont.pic minoset1.pic minoset2.pic ghostpieceset1.pic ghostpieceset2.pic boardedges.pic
 generators : jsonTilemaps outlineTable tetrominoTable
 
 cleanGeneratedData:
