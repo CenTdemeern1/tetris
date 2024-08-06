@@ -2,6 +2,7 @@
 #include <string.h>
 #include "snes/background.h"
 #include "snes/console.h"
+#include "snes/input.h"
 #include "snes/video.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
@@ -32,6 +33,16 @@ enum Tiles
     TILE_ORANGE,
 };
 
+enum Tetrominoes {
+    TETROMINO_I,
+    TETROMINO_T,
+    TETROMINO_S,
+    TETROMINO_J,
+    TETROMINO_O,
+    TETROMINO_Z,
+    TETROMINO_L,
+};
+
 const u16 BACKGROUND_TILES[8] = {
     TILE(0x20, 1, 0, 0, 0),
     TILE(0x21, 1, 0, 0, 0),
@@ -54,6 +65,33 @@ const u8 TETROMINO_PALETTES[7] = {
     0, 0, 0, 0, 1, 1, 1
 };
 
+typedef struct Vec2Di8 OffsetTable[32];
+
+const OffsetTable JLSTZ_OFFSET_TABLE = {
+    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    {  0,  0 }, { +1,  0 }, { +1, -1 }, {  0, +2 }, { +1, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    {  0,  0 }, { -1,  0 }, { -1, -1 }, {  0, +2 }, { -1, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+};
+
+const OffsetTable I_OFFSET_TABLE = {
+    {  0,  0 }, { -1,  0 }, { +2,  0 }, { -1,  0 }, { +2,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    { -1,  0 }, {  0,  0 }, {  0,  0 }, {  0, +1 }, {  0, -2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    { -1, +1 }, { +1, +1 }, { -2, +1 }, { +1,  0 }, { -2,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    {  0, +1 }, {  0, +1 }, {  0, +1 }, {  0, -1 }, {  0, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+};
+
+const OffsetTable O_OFFSET_TABLE = {
+    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+    { -1,  0 }, { -1,  0 }, { -1,  0 }, { -1,  0 }, { -1,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
+};
+
+const OffsetTable *const OFFSET_TABLE_POINTERS[7] = {
+    &I_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &O_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE
+};
+
 struct NextQueue {
     u8 next_queue[8];
     u8 piece_bag[14]; // Support at most 14-bags
@@ -62,8 +100,12 @@ struct NextQueue {
 
 struct PlayerGameplayData {
     struct NextQueue next_queue;
-    u8 currentPiece;
-    u8 heldPiece;
+    u8 current_piece;
+    u8 rotation;
+    struct Vec2Du8 piece_position;
+    u8 held_piece;
+    struct Vec2Du8 board_position;
+    struct Vec2Di16 board_offset;
     u8 board[16 * 22];
 };
 
@@ -170,7 +212,7 @@ void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
         oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
         oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece] + 8, TETROMINO_PALETTES[piece] + 4);
     }
-    player->currentPiece = piece;
+    player->current_piece = piece;
 }
 
 int main(void)
@@ -262,10 +304,32 @@ int main(void)
         MSU1_PLAY_CONTROLS = MSU1_PLAY_CONTROLS_PLAY_LOOP; // Play and loop
     }
 
+    player1.board_position.y = 16;
+
+    u16 frame_timer = 0;
+    
+    u16 previous_joypad1;
+    u16 joypad1 = padsCurrent(0);
     while (1)
     {
+        frame_timer++;
         WaitForVBlank();
         // background0[(2 << 5) + 2] = (u16)piece;
+        previous_joypad1 = joypad1; 
+        joypad1 = padsCurrent(0);
+        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0)
+            player1.rotation++;
+        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0)
+            player1.rotation--;
+        player1.rotation &= 0b11;
+        // if (joypad1 & KEY_LEFT | KEY_RIGHT)) {
+        //     player1.board_offset.x |= 0b0000010000000000;
+        // }
+        // player1.board_offset.x >>= 1;
+        struct Vec2Di8 board_offset = { *((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1) }; // Use the upper bytes
+        // if (joypad1 & KEY_RIGHT) board_offset.x = ~board_offset.x + 1;
+        struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
+        bgSetScroll(0, -player_board_position.x, -player_board_position.y);
         dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
         showFPScounter();
         // consoleDrawText(1, 1, "%x ", (u32)player1.next_queue.piece_bag[0]);
@@ -278,10 +342,21 @@ int main(void)
         // WaitForVBlank();
 
         nextPiece(&player1, 0);
+        player1.piece_position.x = 5;
+        player1.piece_position.y = 1;
+        const struct Vec2Di8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
+        struct Vec2Du16 piece_position = {
+            player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET - piece_offset->x) << 3),
+            player_board_position.y + ((player1.piece_position.y - piece_offset->y) << 3)
+        };
         u8 i;
         for (i = 0; i < 4; i++) {
-            oamSetXY(i * OAM_ENTRY_SIZE, (tetromino_table[player1.currentPiece][0][i].x << 3) + 64, (tetromino_table[player1.currentPiece][0][i].y << 3) + 47);
-            oamSetXY((i + 4) * OAM_ENTRY_SIZE, (tetromino_table[player1.currentPiece][0][i].x << 3) + 64, (tetromino_table[player1.currentPiece][0][i].y << 3) + 151);
+            oamSetXY(
+                 i * OAM_ENTRY_SIZE,
+                 piece_position.x + (tetromino_table[player1.current_piece][player1.rotation][i].x << 3),
+                 piece_position.y + (tetromino_table[player1.current_piece][player1.rotation][i].y << 3)
+             );
+            oamSetXY((i + 4) * OAM_ENTRY_SIZE, (tetromino_table[player1.current_piece][player1.rotation][i].x << 3) + 64, (tetromino_table[player1.current_piece][player1.rotation][i].y << 3) + 151);
         }
     }
     return 0;
