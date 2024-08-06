@@ -215,6 +215,33 @@ void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
     player->current_piece = piece;
 }
 
+bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation) {
+    const OffsetTable *const kick_table_pointer = OFFSET_TABLE_POINTERS[player->current_piece];
+    const struct Vec2Di8 *current_piece_offset = kick_table_pointer[player->rotation << 3];
+    const struct Vec2Di8 *goal_piece_offset = kick_table_pointer[goal_rotation << 3];
+    struct Vec2Du8 current_piece_mino_absolute_positions[4];
+    memcpy(&current_piece_mino_absolute_positions, &tetromino_table[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions));
+    u8 m;
+    for (m = 0; m < 4; m++) {
+        struct Vec2Du8 *mino = &current_piece_mino_absolute_positions[m];
+        *mino = (struct Vec2Du8)VEC2D_ADD(*mino, player->piece_position);
+    }
+    u8 i;
+    for (i = 0; i < 5; i++) {
+        struct Vec2Di8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
+        for (m = 0; m < 4; m++) {
+            struct Vec2Du8 mino_position = VEC2D_ADD(current_piece_mino_absolute_positions[m], kick);
+            if (player->board[mino_position.x + (mino_position.y << 4)] != TILE_EMPTY) {
+                goto fail;
+            }
+        }
+        player->piece_position = (struct Vec2Du8)VEC2D_ADD(player->piece_position, kick);
+        return true;
+        fail:;
+    }
+    return false;
+}
+
 int main(void)
 {
     // Init SPC700
@@ -317,10 +344,12 @@ int main(void)
         // background0[(2 << 5) + 2] = (u16)piece;
         previous_joypad1 = joypad1; 
         joypad1 = padsCurrent(0);
-        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0)
+        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0 && kickPiece(&player1, (player1.rotation + 1) & 0b11)) {
             player1.rotation++;
-        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0)
+        }
+        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0 && kickPiece(&player1, (player1.rotation - 1) & 0b11)) {
             player1.rotation--;
+        }
         player1.rotation &= 0b11;
         // if (joypad1 & KEY_LEFT | KEY_RIGHT)) {
         //     player1.board_offset.x |= 0b0000010000000000;
@@ -341,13 +370,15 @@ int main(void)
         // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
         // WaitForVBlank();
 
-        nextPiece(&player1, 0);
-        player1.piece_position.x = 5;
-        player1.piece_position.y = 1;
-        const struct Vec2Di8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
+        while (player1.current_piece != TETROMINO_I) {
+            nextPiece(&player1, 0);
+        }
+        // const struct Vec2Di8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
+        player1.piece_position.x = 5/* + piece_offset->x*/;
+        player1.piece_position.y = 1/* + piece_offset->y*/;
         struct Vec2Du16 piece_position = {
-            player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET - piece_offset->x) << 3),
-            player_board_position.y + ((player1.piece_position.y - piece_offset->y) << 3)
+            player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
+            player_board_position.y + ((player1.piece_position.y) << 3)
         };
         u8 i;
         for (i = 0; i < 4; i++) {
