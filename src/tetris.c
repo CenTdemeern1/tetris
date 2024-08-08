@@ -3,6 +3,8 @@
 #include "snes/background.h"
 #include "snes/console.h"
 #include "snes/input.h"
+#include "snes/interrupt.h"
+#include "snes/sprite.h"
 #include "snes/video.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
@@ -229,6 +231,10 @@ bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation) {
     u8 i;
     for (i = 0; i < 5; i++) {
         struct Vec2Di8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
+        WaitForVBlank();
+        int x = kick.x;
+        int y = kick.y;
+        consoleDrawText(1, 1, "%i, %i", x, y);
         for (m = 0; m < 4; m++) {
             struct Vec2Du8 mino_position = VEC2D_ADD(current_piece_mino_absolute_positions[m], kick);
             if (player->board[mino_position.x + (mino_position.y << 4)] != TILE_EMPTY) {
@@ -332,6 +338,11 @@ int main(void)
     }
 
     player1.board_position.y = 16;
+    do {
+        nextPiece(&player1, 0);
+        player1.piece_position.x = 5/* + piece_offset->x*/;
+        player1.piece_position.y = 1/* + piece_offset->y*/;
+    } while (player1.current_piece != TETROMINO_I);
 
     u16 frame_timer = 0;
     
@@ -369,16 +380,23 @@ int main(void)
         // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
         // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
         // WaitForVBlank();
-
-        while (player1.current_piece != TETROMINO_I) {
-            nextPiece(&player1, 0);
+        if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0) {
+            player1.piece_position.x--;
         }
+        if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0) {
+            player1.piece_position.x++;
+        }
+        if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0) {
+            player1.piece_position.y--;
+        }
+        if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0) {
+            player1.piece_position.y++;
+        }
+
         // const struct Vec2Di8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
-        player1.piece_position.x = 5/* + piece_offset->x*/;
-        player1.piece_position.y = 1/* + piece_offset->y*/;
         struct Vec2Du16 piece_position = {
             player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
-            player_board_position.y + ((player1.piece_position.y) << 3)
+            player_board_position.y + ((player1.piece_position.y) << 3) - 1
         };
         u8 i;
         for (i = 0; i < 4; i++) {
@@ -389,6 +407,7 @@ int main(void)
              );
             oamSetXY((i + 4) * OAM_ENTRY_SIZE, (tetromino_table[player1.current_piece][player1.rotation][i].x << 3) + 64, (tetromino_table[player1.current_piece][player1.rotation][i].y << 3) + 151);
         }
+        oamSetXY(8 * OAM_ENTRY_SIZE, player1.piece_position.x, player1.piece_position.y);
     }
     return 0;
 }
