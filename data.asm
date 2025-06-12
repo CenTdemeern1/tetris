@@ -34,8 +34,20 @@ outline_table_end:
 
 tetromino_table_x: .incbin "data/generated/tetromino_table_x.bin"
 tetromino_table_x_end:
-
 tetromino_table_y: .incbin "data/generated/tetromino_table_y.bin"
 tetromino_table_y_end:
+
+jlstz_offset_table_x: .incbin "data/generated/jlstz_offset_table_x.bin"
+jlstz_offset_table_x_end:
+jlstz_offset_table_y: .incbin "data/generated/jlstz_offset_table_y.bin"
+jlstz_offset_table_y_end:
+i_offset_table_x: .incbin "data/generated/i_offset_table_x.bin"
+i_offset_table_x_end:
+i_offset_table_y: .incbin "data/generated/i_offset_table_y.bin"
+i_offset_table_y_end:
+o_offset_table_x: .incbin "data/generated/o_offset_table_x.bin"
+o_offset_table_x_end:
+o_offset_table_y: .incbin "data/generated/o_offset_table_y.bin"
+o_offset_table_y_end:
 
 .ends

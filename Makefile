@@ -56,8 +56,12 @@ tetrominoTable: generators/generate_tetromino_table.py
 	@echo generate tetromino table ...
 	python3 $<
 
+offsetTables: generators/generate_offset_tables.py
+	@echo generate offset tables ...
+	python3 $<
+
 bitmaps : pvsneslibfont.pic minoset1.pic minoset2.pic ghostpieceset1.pic ghostpieceset2.pic boardedges.pic
-generators : jsonTilemaps outlineTable tetrominoTable
+generators : jsonTilemaps outlineTable tetrominoTable offsetTables
 
 cleanGeneratedData:
 	@echo clean generated data

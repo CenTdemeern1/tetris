@@ -1,3 +1,6 @@
+#pragma once
+#include <snes.h>
+
 #define FOR_ALL_SURROUNDING(E) do {E(-1, -1); E(0, -1); E(1, -1); E(-1, 0); E(1, 0); E(-1, 1); E(0, 1); E(1, 1);} while (0)
 #define VEC2D_ADD(a, b) { (a).x + (b).x, (a).y + (b).y }
 #define VEC2D_SUB(a, b) { (a).x - (b).x, (a).y - (b).y }
@@ -5,15 +8,11 @@
 
 
 struct Vec2Du8 {
-  unsigned char x;
-  unsigned char y;
+  u8 x;
+  u8 y;
 };
 
 struct Vec2Du16 {
-  unsigned short x;
-  unsigned short y;
+  u16 x;
+  u16 y;
 };
-
-
-typedef unsigned char TetrominoData[4];
-typedef TetrominoData TetrominoRotationsData[4];

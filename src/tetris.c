@@ -1,3 +1,5 @@
+#pragma once
+
 #include <snes.h>
 #include <string.h>
 #include "snes/background.h"
@@ -8,17 +10,10 @@
 #include "snes/video.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
-#include "tetris_helpers.h"
+#include "vectors.h"
 #include "msu1.h"
-
-extern u8 tilfont, palfont;
-extern u8 boardedges_img, boardedges_img_end, boardedges_pal, boardedges_pal_end;
-extern u8 minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minoset2_img, minoset2_img_end, minoset2_pal, minoset2_pal_end;
-extern u8 ghostpieceset1_img, ghostpieceset1_img_end, ghostpieceset1_pal, ghostpieceset1_pal_end, ghostpieceset2_img, ghostpieceset2_img_end, ghostpieceset2_pal, ghostpieceset2_pal_end;
-extern char board_tilemap, board_tilemap_end;
-extern u16 outline_table[256], outline_table_end;
-extern TetrominoRotationsData tetromino_table_x[7], tetromino_table_x_end;
-extern TetrominoRotationsData tetromino_table_y[7], tetromino_table_y_end;
+#include "extern.h"
+#include "kick_piece.h"
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
@@ -66,50 +61,6 @@ const u8 TETROMINO_TILES[7] = {
 
 const u8 TETROMINO_PALETTES[7] = {
     0, 0, 0, 0, 1, 1, 1
-};
-
-typedef struct Vec2Du8 OffsetTable[32];
-
-const OffsetTable JLSTZ_OFFSET_TABLE = {
-    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    {  0,  0 }, { +1,  0 }, { +1, -1 }, {  0, +2 }, { +1, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    {  0,  0 }, { -1,  0 }, { -1, -1 }, {  0, +2 }, { -1, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-};
-
-const OffsetTable I_OFFSET_TABLE = {
-    {  0,  0 }, { -1,  0 }, { +2,  0 }, { -1,  0 }, { +2,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    { -1,  0 }, {  0,  0 }, {  0,  0 }, {  0, +1 }, {  0, -2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    { -1, +1 }, { +1, +1 }, { -2, +1 }, { +1,  0 }, { -2,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    {  0, +1 }, {  0, +1 }, {  0, +1 }, {  0, -1 }, {  0, +2 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-};
-
-const OffsetTable O_OFFSET_TABLE = {
-    {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0, -1 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-    { -1,  0 }, { -1,  0 }, { -1,  0 }, { -1,  0 }, { -1,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
-};
-
-const OffsetTable *const OFFSET_TABLE_POINTERS[7] = {
-    &I_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &O_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE, &JLSTZ_OFFSET_TABLE
-};
-
-struct NextQueue {
-    u8 next_queue[8];
-    u8 piece_bag[14]; // Support at most 14-bags
-    u8 pieces_left_in_bag;
-};
-
-struct PlayerGameplayData {
-    struct NextQueue next_queue;
-    u8 current_piece;
-    u8 rotation;
-    struct Vec2Du8 piece_position;
-    u8 held_piece;
-    struct Vec2Du8 board_position;
-    struct Vec2Du16 board_offset;
-    u8 board[16 * 22];
 };
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
@@ -216,37 +167,6 @@ void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
         oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece] + 8, TETROMINO_PALETTES[piece] + 4);
     }
     player->current_piece = piece;
-}
-
-bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation) {
-    const OffsetTable *const kick_table_pointer = OFFSET_TABLE_POINTERS[player->current_piece];
-    const struct Vec2Du8 *current_piece_offset = kick_table_pointer[player->rotation << 3];
-    const struct Vec2Du8 *goal_piece_offset = kick_table_pointer[goal_rotation << 3];
-    struct Vec2Du8 current_piece_mino_absolute_positions[4];
-    memcpy(&current_piece_mino_absolute_positions, &tetromino_table[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions));
-    u8 m;
-    for (m = 0; m < 4; m++) {
-        struct Vec2Du8 *mino = &current_piece_mino_absolute_positions[m];
-        *mino = (struct Vec2Du8)VEC2D_ADD(*mino, player->piece_position);
-    }
-    u8 i;
-    for (i = 0; i < 5; i++) {
-        struct Vec2Du8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
-        WaitForVBlank();
-        int x = kick.x;
-        int y = kick.y;
-        consoleDrawText(1, 1, "%i, %i", x, y);
-        for (m = 0; m < 4; m++) {
-            struct Vec2Du8 mino_position = VEC2D_ADD(current_piece_mino_absolute_positions[m], kick);
-            if (player->board[mino_position.x + (mino_position.y << 4)] != TILE_EMPTY) {
-                goto fail;
-            }
-        }
-        player->piece_position = (struct Vec2Du8)VEC2D_ADD(player->piece_position, kick);
-        return true;
-        fail:;
-    }
-    return false;
 }
 
 int main(void)
