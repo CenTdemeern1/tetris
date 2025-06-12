@@ -1,4 +1,6 @@
-#pragma once
+#ifndef EXTERN_H
+#define EXTERN_H
+
 #include <snes.h>
 #include "tetris.h"
 
@@ -16,3 +18,5 @@ extern OffsetTable i_offset_table_x, i_offset_table_x_end;
 extern OffsetTable i_offset_table_y, i_offset_table_y_end;
 extern OffsetTable o_offset_table_x, o_offset_table_x_end;
 extern OffsetTable o_offset_table_y, o_offset_table_y_end;
+
+#endif

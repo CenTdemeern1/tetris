@@ -9,37 +9,45 @@ const OffsetTable *const OFFSET_TABLE_POINTERS_Y[7] = {
     &i_offset_table_y, &jlstz_offset_table_y, &jlstz_offset_table_y, &jlstz_offset_table_y, &o_offset_table_y, &jlstz_offset_table_y, &jlstz_offset_table_y
 };
 
-bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation)
+static u8 current_piece_mino_absolute_positions_x[4];
+static u8 current_piece_mino_absolute_positions_y[4];
+static u8 current_piece_offset_x;
+static u8 current_piece_offset_y;
+static u8 kick_x;
+static u8 kick_y;
+static u8 kick_mino_index;
+static u8 kick_index;
+
+bool kickPiece(struct PlayerGameplayData *const player, u8 goal_rotation)
 {
     const OffsetTable *const kick_table_pointer_x = OFFSET_TABLE_POINTERS_X[player->current_piece];
     const OffsetTable *const kick_table_pointer_y = OFFSET_TABLE_POINTERS_Y[player->current_piece];
-    const struct Vec2Du8 *current_piece_offset = kick_table_pointer[player->rotation << 3];
-    const struct Vec2Du8 *goal_piece_offset = kick_table_pointer[goal_rotation << 3];
-    struct Vec2Du8 current_piece_mino_absolute_positions[4];
-    memcpy(&current_piece_mino_absolute_positions, &tetromino_table[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions));
-    u8 m;
-    for (m = 0; m < 4; m++)
+    current_piece_offset_x = *kick_table_pointer_x[player->rotation << 3];
+    current_piece_offset_y = *kick_table_pointer_y[player->rotation << 3];
+    memcpy(&current_piece_mino_absolute_positions_x, &tetromino_table_x[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions_x));
+    memcpy(&current_piece_mino_absolute_positions_y, &tetromino_table_y[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions_y));
+    for (kick_mino_index = 0; kick_mino_index < 4; kick_mino_index++)
     {
-        struct Vec2Du8 *mino = &current_piece_mino_absolute_positions[m];
-        *mino = (struct Vec2Du8)VEC2D_ADD(*mino, player->piece_position);
+        current_piece_mino_absolute_positions_x[kick_mino_index] += player->piece_position.x;
+        current_piece_mino_absolute_positions_y[kick_mino_index] += player->piece_position.y;
     }
-    u8 i;
-    for (i = 0; i < 5; i++)
+    for (kick_index = 0; kick_index < 5; kick_index++)
     {
-        struct Vec2Du8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
-        WaitForVBlank();
-        int x = kick.x;
-        int y = kick.y;
-        consoleDrawText(1, 1, "%i, %i", x, y);
-        for (m = 0; m < 4; m++)
+        kick_x = current_piece_offset_x - *(kick_table_pointer_x[goal_rotation << 3][kick_index]);
+        kick_y = current_piece_offset_y - *(kick_table_pointer_y[goal_rotation << 3][kick_index]);
+        // WaitForVBlank();
+        // consoleDrawText(1, 1, "%i, %i", x, y);
+        for (kick_mino_index = 0; kick_mino_index < 4; kick_mino_index++)
         {
-            struct Vec2Du8 mino_position = VEC2D_ADD(current_piece_mino_absolute_positions[m], kick);
-            if (player->board[mino_position.x + (mino_position.y << 4)] != TILE_EMPTY)
+            u8 mino_position_x = current_piece_mino_absolute_positions_x[kick_mino_index] + kick_x;
+            u8 mino_position_y = current_piece_mino_absolute_positions_y[kick_mino_index] + kick_y;
+            if (player->board[mino_position_x + (mino_position_y << 4)] != TILE_EMPTY)
             {
                 goto fail;
             }
         }
-        player->piece_position = (struct Vec2Du8)VEC2D_ADD(player->piece_position, kick);
+        player->piece_position.x += kick_x;
+        player->piece_position.y += kick_y;
         return true;
     fail:;
     }

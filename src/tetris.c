@@ -1,5 +1,3 @@
-#pragma once
-
 #include <snes.h>
 #include <string.h>
 #include "snes/background.h"
@@ -17,29 +15,6 @@
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
-
-enum Tiles
-{
-    TILE_EMPTY,
-    TILE_CYAN,
-    TILE_PURPLE,
-    TILE_GREEN,
-    TILE_BLUE,
-    TILE_YELLOW,
-    TILE_RED,
-    TILE_GRAY,
-    TILE_ORANGE,
-};
-
-enum Tetrominoes {
-    TETROMINO_I,
-    TETROMINO_T,
-    TETROMINO_S,
-    TETROMINO_J,
-    TETROMINO_O,
-    TETROMINO_Z,
-    TETROMINO_L,
-};
 
 const u16 BACKGROUND_TILES[8] = {
     TILE(0x20, 1, 0, 0, 0),
@@ -322,11 +297,15 @@ int main(void)
         u8 i;
         for (i = 0; i < 4; i++) {
             oamSetXY(
-                 i * OAM_ENTRY_SIZE,
-                 piece_position.x + (tetromino_table[player1.current_piece][player1.rotation][i].x << 3),
-                 piece_position.y + (tetromino_table[player1.current_piece][player1.rotation][i].y << 3)
-             );
-            oamSetXY((i + 4) * OAM_ENTRY_SIZE, (tetromino_table[player1.current_piece][player1.rotation][i].x << 3) + 64, (tetromino_table[player1.current_piece][player1.rotation][i].y << 3) + 151);
+                i * OAM_ENTRY_SIZE,
+                piece_position.x + (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3),
+                piece_position.y + (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3)
+            );
+            oamSetXY(
+                (i + 4) * OAM_ENTRY_SIZE,
+                (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3) + 64,
+                (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151
+            );
         }
         oamSetXY(8 * OAM_ENTRY_SIZE, player1.piece_position.x, player1.piece_position.y);
     }
