@@ -17,7 +17,8 @@ extern u8 minoset1_img, minoset1_img_end, minoset1_pal, minoset1_pal_end, minose
 extern u8 ghostpieceset1_img, ghostpieceset1_img_end, ghostpieceset1_pal, ghostpieceset1_pal_end, ghostpieceset2_img, ghostpieceset2_img_end, ghostpieceset2_pal, ghostpieceset2_pal_end;
 extern char board_tilemap, board_tilemap_end;
 extern u16 outline_table[256], outline_table_end;
-extern TetrominoRotationsData tetromino_table[7], tetromino_table_end;
+extern TetrominoRotationsData tetromino_table_x[7], tetromino_table_x_end;
+extern TetrominoRotationsData tetromino_table_y[7], tetromino_table_y_end;
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
@@ -67,7 +68,7 @@ const u8 TETROMINO_PALETTES[7] = {
     0, 0, 0, 0, 1, 1, 1
 };
 
-typedef struct Vec2Di8 OffsetTable[32];
+typedef struct Vec2Du8 OffsetTable[32];
 
 const OffsetTable JLSTZ_OFFSET_TABLE = {
     {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 }, {  0,  0 },
@@ -107,7 +108,7 @@ struct PlayerGameplayData {
     struct Vec2Du8 piece_position;
     u8 held_piece;
     struct Vec2Du8 board_position;
-    struct Vec2Di16 board_offset;
+    struct Vec2Du16 board_offset;
     u8 board[16 * 22];
 };
 
@@ -219,8 +220,8 @@ void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
 
 bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation) {
     const OffsetTable *const kick_table_pointer = OFFSET_TABLE_POINTERS[player->current_piece];
-    const struct Vec2Di8 *current_piece_offset = kick_table_pointer[player->rotation << 3];
-    const struct Vec2Di8 *goal_piece_offset = kick_table_pointer[goal_rotation << 3];
+    const struct Vec2Du8 *current_piece_offset = kick_table_pointer[player->rotation << 3];
+    const struct Vec2Du8 *goal_piece_offset = kick_table_pointer[goal_rotation << 3];
     struct Vec2Du8 current_piece_mino_absolute_positions[4];
     memcpy(&current_piece_mino_absolute_positions, &tetromino_table[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions));
     u8 m;
@@ -230,7 +231,7 @@ bool kickPiece(struct PlayerGameplayData *player, u8 goal_rotation) {
     }
     u8 i;
     for (i = 0; i < 5; i++) {
-        struct Vec2Di8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
+        struct Vec2Du8 kick = VEC2D_PTR_SUB(current_piece_offset + i, goal_piece_offset + i);
         WaitForVBlank();
         int x = kick.x;
         int y = kick.y;
@@ -366,7 +367,7 @@ int main(void)
         //     player1.board_offset.x |= 0b0000010000000000;
         // }
         // player1.board_offset.x >>= 1;
-        struct Vec2Di8 board_offset = { *((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1) }; // Use the upper bytes
+        struct Vec2Du8 board_offset = { *((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1) }; // Use the upper bytes
         // if (joypad1 & KEY_RIGHT) board_offset.x = ~board_offset.x + 1;
         struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
         bgSetScroll(0, -player_board_position.x, -player_board_position.y);
@@ -393,7 +394,7 @@ int main(void)
             player1.piece_position.y++;
         }
 
-        // const struct Vec2Di8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
+        // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
         struct Vec2Du16 piece_position = {
             player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
             player_board_position.y + ((player1.piece_position.y) << 3) - 1
