@@ -59,6 +59,16 @@ void p1NextPiece()
     }
     player1.current_piece = next_piece;
     player1.rotation = 0;
+    player1.piece_position.x = 5 /* + piece_offset->x*/;
+    player1.piece_position.y = 1 /* + piece_offset->y*/;
     memcpy(&player1.mino_positions_x, &tetromino_table_x[next_piece][0], sizeof(player1.mino_positions_x));
     memcpy(&player1.mino_positions_y, &tetromino_table_y[next_piece][0], sizeof(player1.mino_positions_y));
+#define M(n)                          \
+    player1.mino_positions_x[n] += 5; \
+    player1.mino_positions_y[n] += 1
+    M(0);
+    M(1);
+    M(2);
+    M(3);
+#undef M
 }

@@ -172,8 +172,6 @@ int main(void)
     do
     {
         p1NextPiece();
-        player1.piece_position.x = 5 /* + piece_offset->x*/;
-        player1.piece_position.y = 1 /* + piece_offset->y*/;
     } while (player1.current_piece != TETROMINO_I);
 
     u16 frame_timer = 0;
