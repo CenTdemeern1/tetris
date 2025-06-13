@@ -45,12 +45,16 @@ struct PlayerGameplayData
 {
     struct NextQueue next_queue;
     u8 current_piece;
+    u8 held_piece;
     u8 rotation;
     struct Vec2Du8 piece_position;
-    u8 held_piece;
+    u8 mino_positions_x[4];
+    u8 mino_positions_y[4];
     struct Vec2Du8 board_position;
     struct Vec2Du16 board_offset;
     u8 board[16 * 22];
 };
+
+extern struct PlayerGameplayData player1;
 
 #endif

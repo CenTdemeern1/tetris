@@ -8,7 +8,6 @@
 #define VEC2D_SUB(a, b) { (a).x - (b).x, (a).y - (b).y }
 #define VEC2D_PTR_SUB(a, b) { (a)->x - (b)->x, (a)->y - (b)->y }
 
-
 struct Vec2Du8 {
   u8 x;
   u8 y;

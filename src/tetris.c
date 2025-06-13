@@ -12,6 +12,7 @@
 #include "msu1.h"
 #include "extern.h"
 #include "kick_piece.h"
+#include "collides.h"
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
@@ -35,8 +36,7 @@ const u8 TETROMINO_TILES[7] = {
 };
 
 const u8 TETROMINO_PALETTES[7] = {
-    0, 0, 0, 0, 1, 1, 1
-};
+    0, 0, 0, 0, 1, 1, 1};
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
 static u8 board_width = 10;
@@ -100,13 +100,16 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
 #undef O
 }
 
-u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag_length) {
+u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag_length)
+{
     if (piece_bag_length == 0)
         return rand() % 7; // No piece bag = complete chaos
-    if (next_queue->pieces_left_in_bag == 0) {
+    if (next_queue->pieces_left_in_bag == 0)
+    {
         // TODO: Load the piece bag from somewhere instead of doing this
         u8 i;
-        for (i = 0; i < piece_bag_length; i++) {
+        for (i = 0; i < piece_bag_length; i++)
+        {
             next_queue->piece_bag[i] = i;
         }
         next_queue->pieces_left_in_bag = piece_bag_length;
@@ -115,9 +118,12 @@ u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag
     u8 random_piece;
     u8 i;
     // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
-    for (i = 0; i < piece_bag_length; i++) {
-        if (next_queue->piece_bag[i] == 255) continue;
-        if (random_piece_index == 0) {
+    for (i = 0; i < piece_bag_length; i++)
+    {
+        if (next_queue->piece_bag[i] == 255)
+            continue;
+        if (random_piece_index == 0)
+        {
             random_piece = next_queue->piece_bag[i];
             next_queue->piece_bag[i] = 255;
             break;
@@ -134,10 +140,12 @@ u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag
     return next_piece;
 }
 
-void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start) {
+void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start)
+{
     u8 piece = getNextPiece(&player->next_queue, 5, 7);
     u8 i;
-    for (i = sprite_id_start; i < sprite_id_start + 4; i++) {
+    for (i = sprite_id_start; i < sprite_id_start + 4; i++)
+    {
         oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
         oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece] + 8, TETROMINO_PALETTES[piece] + 4);
     }
@@ -234,14 +242,15 @@ int main(void)
     }
 
     player1.board_position.y = 16;
-    do {
+    do
+    {
         nextPiece(&player1, 0);
-        player1.piece_position.x = 5/* + piece_offset->x*/;
-        player1.piece_position.y = 1/* + piece_offset->y*/;
+        player1.piece_position.x = 5 /* + piece_offset->x*/;
+        player1.piece_position.y = 1 /* + piece_offset->y*/;
     } while (player1.current_piece != TETROMINO_I);
 
     u16 frame_timer = 0;
-    
+
     u16 previous_joypad1;
     u16 joypad1 = padsCurrent(0);
     while (1)
@@ -249,12 +258,14 @@ int main(void)
         frame_timer++;
         WaitForVBlank();
         // background0[(2 << 5) + 2] = (u16)piece;
-        previous_joypad1 = joypad1; 
+        previous_joypad1 = joypad1;
         joypad1 = padsCurrent(0);
-        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0 && kickPiece(&player1, (player1.rotation + 1) & 0b11)) {
+        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0 && kickPiece(&player1, (player1.rotation + 1) & 0b11))
+        {
             player1.rotation++;
         }
-        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0 && kickPiece(&player1, (player1.rotation - 1) & 0b11)) {
+        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0 && kickPiece(&player1, (player1.rotation - 1) & 0b11))
+        {
             player1.rotation--;
         }
         player1.rotation &= 0b11;
@@ -262,7 +273,7 @@ int main(void)
         //     player1.board_offset.x |= 0b0000010000000000;
         // }
         // player1.board_offset.x >>= 1;
-        struct Vec2Du8 board_offset = { *((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1) }; // Use the upper bytes
+        struct Vec2Du8 board_offset = {*((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1)}; // Use the upper bytes
         // if (joypad1 & KEY_RIGHT) board_offset.x = ~board_offset.x + 1;
         struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
         bgSetScroll(0, -player_board_position.x, -player_board_position.y);
@@ -276,48 +287,50 @@ int main(void)
         // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
         // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
         // WaitForVBlank();
-        if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0) {
-            player1.piece_position.x--;
-            if (kickPiece(&player1, player1.rotation) == false) {
-                player1.piece_position.x++;
-            }
-        }
-        if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0) {
-            player1.piece_position.x++;
-            if (kickPiece(&player1, player1.rotation) == false) {
+        if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0)
+        {
+            if (!p1CheckCollision((struct Vec2Du8){-1, 0}))
+            {
                 player1.piece_position.x--;
             }
         }
-        if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0) {
-            player1.piece_position.y--;
-            if (kickPiece(&player1, player1.rotation) == false) {
-                player1.piece_position.y++;
+        if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0)
+        {
+            if (!p1CheckCollision((struct Vec2Du8){1, 0}))
+            {
+                player1.piece_position.x++;
             }
         }
-        if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0) {
-            player1.piece_position.y++;
-            if (kickPiece(&player1, player1.rotation) == false) {
+        if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0)
+        {
+            if (!p1CheckCollision((struct Vec2Du8){0, -1}))
+            {
                 player1.piece_position.y--;
+            }
+        }
+        if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0)
+        {
+            if (!p1CheckCollision((struct Vec2Du8){0, 1}))
+            {
+                player1.piece_position.y++;
             }
         }
 
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
         struct Vec2Du16 piece_position = {
             player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
-            player_board_position.y + ((player1.piece_position.y) << 3) - 1
-        };
+            player_board_position.y + ((player1.piece_position.y) << 3) - 1};
         u8 i;
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < 4; i++)
+        {
             oamSetXY(
                 i * OAM_ENTRY_SIZE,
                 piece_position.x + (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3),
-                piece_position.y + (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3)
-            );
+                piece_position.y + (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3));
             oamSetXY(
                 (i + 4) * OAM_ENTRY_SIZE,
                 (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3) + 64,
-                (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151
-            );
+                (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151);
         }
         oamSetXY(8 * OAM_ENTRY_SIZE, player1.piece_position.x, player1.piece_position.y);
     }
