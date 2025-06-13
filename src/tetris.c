@@ -14,30 +14,8 @@
 #include "kick_piece.h"
 #include "collides.h"
 #include "move_piece.h"
-
-const u8 SPACE_ABOVE_BOARD = 2;
-const u8 HORIZONTAL_BOARD_OFFSET = 1;
-
-const u16 BACKGROUND_TILES[8] = {
-    TILE(0x20, 1, 0, 0, 0),
-    TILE(0x21, 1, 0, 0, 0),
-    TILE(0x22, 1, 0, 0, 0),
-    TILE(0x23, 1, 0, 0, 0),
-    TILE(0x24, 2, 0, 0, 0),
-    TILE(0x25, 2, 0, 0, 0),
-    TILE(0x26, 2, 0, 0, 0),
-    TILE(0x27, 2, 0, 0, 0),
-};
-
-const u16 BACKGROUND_TILE_EMPTY = TILE(0, 0, 0, 0, 0);
-const u16 BACKGROUND_TILE_EMPTY_BOARD = TILE(1, 0, 0, 0, 0);
-
-const u8 TETROMINO_TILES[7] = {
-    0, 1, 2, 3, 4, 5, 7 // Main purpose: skip the gray mino
-};
-
-const u8 TETROMINO_PALETTES[7] = {
-    0, 0, 0, 0, 1, 1, 1};
+#include "piece_bag.h"
+#include "tetris.h"
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
 static u8 board_width = 10;
@@ -99,58 +77,6 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
     } while (0)
     FOR_ALL_SURROUNDING(O);
 #undef O
-}
-
-u8 getNextPiece(struct NextQueue *next_queue, u8 next_queue_length, u8 piece_bag_length)
-{
-    if (piece_bag_length == 0)
-        return rand() % 7; // No piece bag = complete chaos
-    if (next_queue->pieces_left_in_bag == 0)
-    {
-        // TODO: Load the piece bag from somewhere instead of doing this
-        u8 i;
-        for (i = 0; i < piece_bag_length; i++)
-        {
-            next_queue->piece_bag[i] = i;
-        }
-        next_queue->pieces_left_in_bag = piece_bag_length;
-    }
-    u8 random_piece_index = rand() % next_queue->pieces_left_in_bag;
-    u8 random_piece;
-    u8 i;
-    // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
-    for (i = 0; i < piece_bag_length; i++)
-    {
-        if (next_queue->piece_bag[i] == 255)
-            continue;
-        if (random_piece_index == 0)
-        {
-            random_piece = next_queue->piece_bag[i];
-            next_queue->piece_bag[i] = 255;
-            break;
-        }
-        random_piece_index--;
-    }
-    next_queue->pieces_left_in_bag--;
-    if (next_queue_length == 0)
-        return random_piece;
-    u8 next_piece = next_queue->next_queue[0];
-    if (next_queue_length > 1)
-        memmove(next_queue->next_queue, next_queue->next_queue + 1, next_queue_length - 1);
-    next_queue->next_queue[next_queue_length - 1] = random_piece;
-    return next_piece;
-}
-
-void nextPiece(struct PlayerGameplayData *player, u16 sprite_id_start)
-{
-    u8 piece = getNextPiece(&player->next_queue, 5, 7);
-    u8 i;
-    for (i = sprite_id_start; i < sprite_id_start + 4; i++)
-    {
-        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece], TETROMINO_PALETTES[piece]);
-        oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[piece] + 8, TETROMINO_PALETTES[piece] + 4);
-    }
-    player->current_piece = piece;
 }
 
 int main(void)
@@ -245,7 +171,7 @@ int main(void)
     player1.board_position.y = 16;
     do
     {
-        nextPiece(&player1, 0);
+        p1NextPiece();
         player1.piece_position.x = 5 /* + piece_offset->x*/;
         player1.piece_position.y = 1 /* + piece_offset->y*/;
     } while (player1.current_piece != TETROMINO_I);

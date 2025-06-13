@@ -3,6 +3,7 @@
 
 #include <snes.h>
 #include "vectors.h"
+#include "snes_helpers.h"
 
 enum Tiles
 {
@@ -56,5 +57,29 @@ struct PlayerGameplayData
 };
 
 extern struct PlayerGameplayData player1;
+
+const u8 SPACE_ABOVE_BOARD = 2;
+const u8 HORIZONTAL_BOARD_OFFSET = 1;
+
+const u16 BACKGROUND_TILES[8] = {
+    TILE(0x20, 1, 0, 0, 0),
+    TILE(0x21, 1, 0, 0, 0),
+    TILE(0x22, 1, 0, 0, 0),
+    TILE(0x23, 1, 0, 0, 0),
+    TILE(0x24, 2, 0, 0, 0),
+    TILE(0x25, 2, 0, 0, 0),
+    TILE(0x26, 2, 0, 0, 0),
+    TILE(0x27, 2, 0, 0, 0),
+};
+
+const u16 BACKGROUND_TILE_EMPTY = TILE(0, 0, 0, 0, 0);
+const u16 BACKGROUND_TILE_EMPTY_BOARD = TILE(1, 0, 0, 0, 0);
+
+const u8 TETROMINO_TILES[7] = {
+    0, 1, 2, 3, 4, 5, 7 // Main purpose: skip the gray mino
+};
+
+const u8 TETROMINO_PALETTES[7] = {
+    0, 0, 0, 0, 1, 1, 1};
 
 #endif
