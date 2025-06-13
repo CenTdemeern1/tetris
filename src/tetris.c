@@ -13,6 +13,7 @@
 #include "extern.h"
 #include "kick_piece.h"
 #include "collides.h"
+#include "move_piece.h"
 
 const u8 SPACE_ABOVE_BOARD = 2;
 const u8 HORIZONTAL_BOARD_OFFSET = 1;
@@ -289,31 +290,19 @@ int main(void)
         // WaitForVBlank();
         if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0)
         {
-            if (!p1CheckCollision((struct Vec2Du8){-1, 0}))
-            {
-                player1.piece_position.x--;
-            }
+            p1AttemptMove((struct Vec2Du8){-1, 0});
         }
         if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0)
         {
-            if (!p1CheckCollision((struct Vec2Du8){1, 0}))
-            {
-                player1.piece_position.x++;
-            }
+            p1AttemptMove((struct Vec2Du8){1, 0});
         }
         if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0)
         {
-            if (!p1CheckCollision((struct Vec2Du8){0, -1}))
-            {
-                player1.piece_position.y--;
-            }
+            p1AttemptMove((struct Vec2Du8){0, -1});
         }
         if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0)
         {
-            if (!p1CheckCollision((struct Vec2Du8){0, 1}))
-            {
-                player1.piece_position.y++;
-            }
+            p1AttemptMove((struct Vec2Du8){0, 1});
         }
 
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
