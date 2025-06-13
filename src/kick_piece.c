@@ -11,8 +11,6 @@ const OffsetTable *const OFFSET_TABLE_POINTERS_Y[7] = {
 
 static u8 current_piece_mino_absolute_positions_x[4];
 static u8 current_piece_mino_absolute_positions_y[4];
-static u8 current_piece_offset_x;
-static u8 current_piece_offset_y;
 static u8 kick_x;
 static u8 kick_y;
 static u8 kick_mino_index;
@@ -22,8 +20,6 @@ bool kickPiece(struct PlayerGameplayData *const player, u8 goal_rotation)
 {
     const OffsetTable *const kick_table_pointer_x = OFFSET_TABLE_POINTERS_X[player->current_piece];
     const OffsetTable *const kick_table_pointer_y = OFFSET_TABLE_POINTERS_Y[player->current_piece];
-    current_piece_offset_x = *kick_table_pointer_x[player->rotation << 3];
-    current_piece_offset_y = *kick_table_pointer_y[player->rotation << 3];
     memcpy(&current_piece_mino_absolute_positions_x, &tetromino_table_x[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions_x));
     memcpy(&current_piece_mino_absolute_positions_y, &tetromino_table_y[player->current_piece][goal_rotation], sizeof(current_piece_mino_absolute_positions_y));
     for (kick_mino_index = 0; kick_mino_index < 4; kick_mino_index++)
@@ -33,21 +29,25 @@ bool kickPiece(struct PlayerGameplayData *const player, u8 goal_rotation)
     }
     for (kick_index = 0; kick_index < 5; kick_index++)
     {
-        kick_x = current_piece_offset_x - *(kick_table_pointer_x[goal_rotation << 3][kick_index]);
-        kick_y = current_piece_offset_y - *(kick_table_pointer_y[goal_rotation << 3][kick_index]);
-        // WaitForVBlank();
-        // consoleDrawText(1, 1, "%i, %i", x, y);
+        kick_x = (*kick_table_pointer_x)[player->rotation][kick_index] - (*kick_table_pointer_x)[goal_rotation][kick_index];
+        kick_y = (*kick_table_pointer_y)[player->rotation][kick_index] - (*kick_table_pointer_y)[goal_rotation][kick_index];
         for (kick_mino_index = 0; kick_mino_index < 4; kick_mino_index++)
         {
             u8 mino_position_x = current_piece_mino_absolute_positions_x[kick_mino_index] + kick_x;
-            u8 mino_position_y = current_piece_mino_absolute_positions_y[kick_mino_index] + kick_y;
-            if (player->board[mino_position_x + (mino_position_y << 4)] != TILE_EMPTY)
+            u8 mino_position_y = current_piece_mino_absolute_positions_y[kick_mino_index] - kick_y;
+            if (mino_position_x >= 10) {
+                goto fail;
+            }
+            if (mino_position_y >= 22) {
+                goto fail;
+            }
+            if (player->board[(u16)mino_position_x + ((u16)mino_position_y << 4)] != TILE_EMPTY)
             {
                 goto fail;
             }
         }
         player->piece_position.x += kick_x;
-        player->piece_position.y += kick_y;
+        player->piece_position.y -= kick_y;
         return true;
     fail:;
     }

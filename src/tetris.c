@@ -278,15 +278,27 @@ int main(void)
         // WaitForVBlank();
         if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0) {
             player1.piece_position.x--;
+            if (kickPiece(&player1, player1.rotation) == false) {
+                player1.piece_position.x++;
+            }
         }
         if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0) {
             player1.piece_position.x++;
+            if (kickPiece(&player1, player1.rotation) == false) {
+                player1.piece_position.x--;
+            }
         }
         if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0) {
             player1.piece_position.y--;
+            if (kickPiece(&player1, player1.rotation) == false) {
+                player1.piece_position.y++;
+            }
         }
         if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0) {
             player1.piece_position.y++;
+            if (kickPiece(&player1, player1.rotation) == false) {
+                player1.piece_position.y--;
+            }
         }
 
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
