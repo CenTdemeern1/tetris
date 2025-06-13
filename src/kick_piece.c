@@ -45,7 +45,7 @@ bool p1KickPiece(u8 goal_rotation)
         player1.piece_position.y -= kick_y;
 #define K(n)                                                                           \
     player1.mino_positions_x[n] = current_piece_mino_absolute_positions_x[n] + kick_x; \
-    player1.mino_positions_y[n] = current_piece_mino_absolute_positions_y[n] + kick_y
+    player1.mino_positions_y[n] = current_piece_mino_absolute_positions_y[n] - kick_y
         K(0);
         K(1);
         K(2);
