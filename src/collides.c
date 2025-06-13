@@ -2,8 +2,6 @@
 #include "tetris.h"
 #include "vectors.h"
 
-extern struct PlayerGameplayData player1;
-
 bool p1IsTileSolid(struct Vec2Du8 position)
 {
     if (position.x >= 10)

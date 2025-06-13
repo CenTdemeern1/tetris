@@ -261,13 +261,13 @@ int main(void)
         // background0[(2 << 5) + 2] = (u16)piece;
         previous_joypad1 = joypad1;
         joypad1 = padsCurrent(0);
-        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0 && kickPiece(&player1, (player1.rotation + 1) & 0b11))
+        if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0)
         {
-            player1.rotation++;
+            p1AttemptRotate(1);
         }
-        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0 && kickPiece(&player1, (player1.rotation - 1) & 0b11))
+        if (joypad1 & KEY_B && (previous_joypad1 & KEY_B) == 0)
         {
-            player1.rotation--;
+            p1AttemptRotate(-1);
         }
         player1.rotation &= 0b11;
         // if (joypad1 & KEY_LEFT | KEY_RIGHT)) {
