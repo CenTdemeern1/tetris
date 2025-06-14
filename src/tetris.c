@@ -232,23 +232,6 @@ int main(void)
             board_offset.x = -board_offset.x;
         struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
 
-        // Set up graphics during vblank
-        WaitForVBlank();
-
-        // background0[(2 << 5) + 2] = (u16)piece;
-
-        bgSetScroll(0, -player_board_position.x, -player_board_position.y);
-        dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
-        showFPScounter();
-        // consoleDrawText(1, 1, "%x ", (u32)player1.next_queue.piece_bag[0]);
-        // consoleDrawText(4, 1, "%x ", (u32)player1.next_queue.piece_bag[1]);
-        // consoleDrawText(7, 1, "%x ", (u32)player1.next_queue.piece_bag[2]);
-        // consoleDrawText(10, 1, "%x ", (u32)player1.next_queue.piece_bag[3]);
-        // consoleDrawText(13, 1, "%x ", (u32)player1.next_queue.piece_bag[4]);
-        // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
-        // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
-        // WaitForVBlank();
-
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
         struct Vec2Du8 piece_position = {
             player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
@@ -266,6 +249,24 @@ int main(void)
                 (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151);
         }
         oamSetXY(OAM_ID(8), player1.piece_position.x, player1.piece_position.y);
+
+        // Set up graphics during vblank
+        WaitForVBlank();
+
+        // background0[(2 << 5) + 2] = (u16)piece;
+
+        bgSetScroll(0, -player_board_position.x, -player_board_position.y);
+        dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
+        showFPScounter();
+        // consoleDrawText(1, 1, "%x ", (u32)player1.next_queue.piece_bag[0]);
+        // consoleDrawText(4, 1, "%x ", (u32)player1.next_queue.piece_bag[1]);
+        // consoleDrawText(7, 1, "%x ", (u32)player1.next_queue.piece_bag[2]);
+        // consoleDrawText(10, 1, "%x ", (u32)player1.next_queue.piece_bag[3]);
+        // consoleDrawText(13, 1, "%x ", (u32)player1.next_queue.piece_bag[4]);
+        // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
+        // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
+        // WaitForVBlank();
+        // oamUpdate();
     }
     return 0;
 }
