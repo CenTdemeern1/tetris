@@ -79,6 +79,10 @@ void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width
 #undef O
 }
 
+static bool move_left_bumped = false;
+static bool move_right_bumped = false;
+static bool last_bump_was_left = false;
+
 int main(void)
 {
     // Init SPC700
@@ -171,7 +175,7 @@ int main(void)
     player1.board_position.y = 16;
     do
     {
-        p1NextPiece();
+        p1NextPiece(); // FIXME: This changes sprites and this needs to be called during vblank. This should be refactored
     } while (player1.current_piece != TETROMINO_I);
 
     u16 frame_timer = 0;
@@ -180,11 +184,29 @@ int main(void)
     u16 joypad1 = padsCurrent(0);
     while (1)
     {
+        // Processing
         frame_timer++;
-        WaitForVBlank();
-        // background0[(2 << 5) + 2] = (u16)piece;
+        // scanPads(); // ?
         previous_joypad1 = joypad1;
         joypad1 = padsCurrent(0);
+
+        if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0)
+        {
+            move_left_bumped = p1AttemptMove((struct Vec2Du8){-1, 0});
+        }
+        if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0)
+        {
+            move_right_bumped = p1AttemptMove((struct Vec2Du8){1, 0});
+        }
+        if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0)
+        {
+            p1AttemptMove((struct Vec2Du8){0, -1});
+        }
+        if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0)
+        {
+            p1AttemptMove((struct Vec2Du8){0, 1});
+        }
+
         if (joypad1 & KEY_A && (previous_joypad1 & KEY_A) == 0)
         {
             p1AttemptRotate(1);
@@ -194,13 +216,27 @@ int main(void)
             p1AttemptRotate(-1);
         }
         player1.rotation &= 0b11;
-        // if (joypad1 & KEY_LEFT | KEY_RIGHT)) {
-        //     player1.board_offset.x |= 0b0000010000000000;
-        // }
-        // player1.board_offset.x >>= 1;
+        if (joypad1 & KEY_LEFT && move_left_bumped)
+        {
+            player1.board_offset.x |= 0b0000010000000000;
+            last_bump_was_left = true;
+        }
+        else if (joypad1 & KEY_RIGHT && move_right_bumped)
+        {
+            player1.board_offset.x |= 0b0000010000000000;
+            last_bump_was_left = false;
+        }
+        player1.board_offset.x >>= 1;
         struct Vec2Du8 board_offset = {*((char *)&player1.board_offset.x + 1), *((char *)&player1.board_offset.y + 1)}; // Use the upper bytes
-        // if (joypad1 & KEY_RIGHT) board_offset.x = ~board_offset.x + 1;
+        if (last_bump_was_left)
+            board_offset.x = -board_offset.x;
         struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
+
+        // Set up graphics during vblank
+        WaitForVBlank();
+
+        // background0[(2 << 5) + 2] = (u16)piece;
+
         bgSetScroll(0, -player_board_position.x, -player_board_position.y);
         dmaCopyVram((u8 *)background0, 0x6800, sizeof(background0));
         showFPScounter();
@@ -212,40 +248,24 @@ int main(void)
         // consoleDrawText(16, 1, "%x ", (u32)player1.next_queue.piece_bag[5]);
         // consoleDrawText(19, 1, "%x ", (u32)player1.next_queue.piece_bag[6]);
         // WaitForVBlank();
-        if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0)
-        {
-            p1AttemptMove((struct Vec2Du8){-1, 0});
-        }
-        if (joypad1 & KEY_RIGHT && (previous_joypad1 & KEY_RIGHT) == 0)
-        {
-            p1AttemptMove((struct Vec2Du8){1, 0});
-        }
-        if (joypad1 & KEY_UP && (previous_joypad1 & KEY_UP) == 0)
-        {
-            p1AttemptMove((struct Vec2Du8){0, -1});
-        }
-        if (joypad1 & KEY_DOWN && (previous_joypad1 & KEY_DOWN) == 0)
-        {
-            p1AttemptMove((struct Vec2Du8){0, 1});
-        }
 
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
-        struct Vec2Du16 piece_position = {
+        struct Vec2Du8 piece_position = {
             player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
             player_board_position.y + ((player1.piece_position.y) << 3) - 1};
         u8 i;
         for (i = 0; i < 4; i++)
         {
             oamSetXY(
-                i * OAM_ENTRY_SIZE,
+                OAM_ID(i),
                 piece_position.x + (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3),
                 piece_position.y + (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3));
             oamSetXY(
-                (i + 4) * OAM_ENTRY_SIZE,
+                OAM_ID(i + 4),
                 (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3) + 64,
                 (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151);
         }
-        oamSetXY(8 * OAM_ENTRY_SIZE, player1.piece_position.x, player1.piece_position.y);
+        oamSetXY(OAM_ID(8), player1.piece_position.x, player1.piece_position.y);
     }
     return 0;
 }

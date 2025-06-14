@@ -3,6 +3,6 @@
 
 #include "vectors.h"
 
-extern void p1AttemptMove(struct Vec2Du8 to_offset);
+extern bool p1AttemptMove(struct Vec2Du8 to_offset);
 
 #endif

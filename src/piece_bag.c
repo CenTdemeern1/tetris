@@ -54,8 +54,8 @@ void p1NextPiece()
     u8 i;
     for (i = P1_SPRITE_ID_START; i < P1_SPRITE_ID_END; i++)
     {
-        oamSet(i * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[next_piece], TETROMINO_PALETTES[next_piece]);
-        oamSet((i + 4) * OAM_ENTRY_SIZE, 0, 0, 3, false, false, TETROMINO_TILES[next_piece] + 8, TETROMINO_PALETTES[next_piece] + 4);
+        oamSet(OAM_ID(i), 0, 0, 3, false, false, TETROMINO_TILES[next_piece], TETROMINO_PALETTES[next_piece]);
+        oamSet(OAM_ID(i + 4), 0, 0, 3, false, false, TETROMINO_TILES[next_piece] + 8, TETROMINO_PALETTES[next_piece] + 4);
     }
     player1.current_piece = next_piece;
     player1.rotation = 0;

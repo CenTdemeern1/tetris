@@ -2,7 +2,7 @@
 #include "tetris.h"
 #include "vectors.h"
 
-void p1AttemptMove(struct Vec2Du8 to_offset)
+bool p1AttemptMove(struct Vec2Du8 to_offset)
 {
     if (!p1CheckCollision(to_offset))
     {
@@ -16,5 +16,7 @@ void p1AttemptMove(struct Vec2Du8 to_offset)
         A(2);
         A(3);
 #undef A
+        return false;
     }
+    return true;
 }
