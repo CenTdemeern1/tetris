@@ -8,6 +8,7 @@ bool p1IsTileSolid(struct Vec2Du8 position)
         return true;
     if (position.y >= 22)
         return true;
+    consoleMesenBreakpoint();
     return BOARD_INDEX_VEC2(player1.board, position) != TILE_EMPTY;
 }
 

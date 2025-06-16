@@ -63,6 +63,7 @@ struct PlayerGameplayData
     u8 board[16 * 22];
 };
 
+extern u16 background0[TILEMAP_TILE_NUMBER_32x32];
 extern struct PlayerGameplayData player1;
 
 const u8 SPACE_ABOVE_BOARD = 2;
