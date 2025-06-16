@@ -71,4 +71,5 @@ void p1NextPiece()
     M(2);
     M(3);
 #undef M
+    player1.ghost_piece_dirty = true;
 }

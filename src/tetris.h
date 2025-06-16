@@ -56,6 +56,8 @@ struct PlayerGameplayData
     struct Vec2Du8 piece_position;
     u8 mino_positions_x[4];
     u8 mino_positions_y[4];
+    bool ghost_piece_dirty;
+    u8 ghost_piece_height_offset;
     struct Vec2Du8 board_position;
     struct Vec2Du16 board_offset;
     u8 board[16 * 22];

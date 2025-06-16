@@ -16,6 +16,7 @@ bool p1AttemptMove(struct Vec2Du8 to_offset)
         A(2);
         A(3);
 #undef A
+        player1.ghost_piece_dirty = true;
         return false;
     }
     return true;

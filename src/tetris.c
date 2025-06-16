@@ -1,11 +1,12 @@
 #include <snes.h>
 #include <string.h>
-#include "snes/background.h"
-#include "snes/console.h"
-#include "snes/input.h"
-#include "snes/interrupt.h"
-#include "snes/sprite.h"
-#include "snes/video.h"
+// #include "snes/background.h"
+// #include "snes/console.h"
+// #include "snes/input.h"
+// #include "snes/interrupt.h"
+// #include "snes/sprite.h"
+// #include "snes/video.h"
+#include "tetris.h"
 #include "snes_helpers.h"
 #include "math_tables.h"
 #include "vectors.h"
@@ -15,7 +16,7 @@
 #include "collides.h"
 #include "move_piece.h"
 #include "piece_bag.h"
-#include "tetris.h"
+#include "ghost_piece.h"
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
 static struct PlayerGameplayData player1;
@@ -48,14 +49,14 @@ u16 p1GetOutlineForTile(u8 x, u8 y)
 
 void p1OutlineTile(u8 x, u8 y)
 {
-#define O(X, Y)                                                                                                                              \
+#define O(X, Y)                                                                                                                               \
     if ((u8)(x + X) < BOARD_WIDTH && (u8)(y + Y) < BOARD_HEIGHT && (u8)(y + Y) >= SPACE_ABOVE_BOARD && p1GetTile(x + X, y + Y) == TILE_EMPTY) \
-        BACKGROUND_TILE_32(                                                                                                                  \
-            background0,                                                                                                                     \
-            (u8)(x + HORIZONTAL_BOARD_OFFSET + X),                                                                                           \
-            (u8)(y + Y)) =                                                                                                                   \
-            p1GetOutlineForTile(                                                                                                             \
-                x + X,                                                                                                                       \
+        BACKGROUND_TILE_32(                                                                                                                   \
+            background0,                                                                                                                      \
+            (u8)(x + HORIZONTAL_BOARD_OFFSET + X),                                                                                            \
+            (u8)(y + Y)) =                                                                                                                    \
+            p1GetOutlineForTile(                                                                                                              \
+                x + X,                                                                                                                        \
                 y + Y);
     FOR_ALL_SURROUNDING(O);
 #undef O
@@ -209,7 +210,6 @@ int main(void)
 
         if (joypad1 & KEY_START && (previous_joypad1 & KEY_START) == 0)
         {
-            // BOARD_INDEX(player1.board, player1.mino_positions_x[0], player1.mino_positions_y[0]) = TETROMINO_TILES[player1.current_piece];
 #define L(n)                                                                                                                       \
     p1SetTile(player1.mino_positions_x[n], player1.mino_positions_y[n], (enum Tiles)(TETROMINO_TILES[player1.current_piece] + 1)); \
     p1OutlineTile(player1.mino_positions_x[n], player1.mino_positions_y[n]);
@@ -220,6 +220,9 @@ int main(void)
 #undef L
             p1NextPiece();
         }
+
+        if (player1.ghost_piece_dirty)
+            p1RelocateGhostPiece();
 
         if (joypad1 & KEY_LEFT && move_left_bumped)
         {
@@ -238,20 +241,23 @@ int main(void)
         struct Vec2Du8 player_board_position = VEC2D_ADD(player1.board_position, board_offset);
 
         // const struct Vec2Du8 *piece_offset = &(*OFFSET_TABLE_POINTERS[player1.current_piece])[player1.rotation << 3];
-        struct Vec2Du8 piece_position = {
-            player_board_position.x + ((player1.piece_position.x + HORIZONTAL_BOARD_OFFSET) << 3),
-            player_board_position.y + ((player1.piece_position.y) << 3) - 1};
+        struct Vec2Du8 piece_offset = {
+            player_board_position.x + (HORIZONTAL_BOARD_OFFSET << 3),
+            player_board_position.y - 1};
         u8 i;
         for (i = 0; i < 4; i++)
         {
+            struct Vec2Du8 piece_position = {
+                piece_offset.x + (player1.mino_positions_x[i] << 3),
+                piece_offset.y + (player1.mino_positions_y[i] << 3)};
             oamSetXY(
                 OAM_ID(i),
-                piece_position.x + (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3),
-                piece_position.y + (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3));
+                piece_position.x,
+                piece_position.y);
             oamSetXY(
                 OAM_ID(i + 4),
-                (tetromino_table_x[player1.current_piece][player1.rotation][i] << 3) + 64,
-                (tetromino_table_y[player1.current_piece][player1.rotation][i] << 3) + 151);
+                piece_position.x,
+                piece_position.y + (player1.ghost_piece_height_offset << 3));
         }
         oamSetXY(OAM_ID(8), player1.piece_position.x, player1.piece_position.y);
 

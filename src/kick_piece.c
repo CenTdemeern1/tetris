@@ -34,9 +34,8 @@ bool p1KickPiece(u8 goal_rotation)
         for (kick_mino_index = 0; kick_mino_index < 4; kick_mino_index++)
         {
             if (p1IsTileSolid((struct Vec2Du8){
-                current_piece_mino_absolute_positions_x[kick_mino_index] + kick_x,
-                current_piece_mino_absolute_positions_y[kick_mino_index] - kick_y
-            }))
+                    current_piece_mino_absolute_positions_x[kick_mino_index] + kick_x,
+                    current_piece_mino_absolute_positions_y[kick_mino_index] - kick_y}))
             {
                 goto fail;
             }
@@ -51,6 +50,7 @@ bool p1KickPiece(u8 goal_rotation)
         K(2);
         K(3);
 #undef K
+        player1.ghost_piece_dirty = true;
         return true;
     fail:;
     }
@@ -59,7 +59,8 @@ bool p1KickPiece(u8 goal_rotation)
 
 static u8 attempt_goal_rotation;
 
-void p1AttemptRotate(u8 relative_rotation) {
+void p1AttemptRotate(u8 relative_rotation)
+{
     attempt_goal_rotation = (player1.rotation + relative_rotation) & 0b11;
     if (p1KickPiece(attempt_goal_rotation))
     {
