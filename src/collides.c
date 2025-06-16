@@ -8,7 +8,7 @@ bool p1IsTileSolid(struct Vec2Du8 position)
         return true;
     if (position.y >= 22)
         return true;
-    return player1.board[(u16)position.x + ((u16)position.y << 4)] != TILE_EMPTY;
+    return BOARD_INDEX_VEC2(player1.board, position) != TILE_EMPTY;
 }
 
 bool p1CheckCollision(struct Vec2Du8 at_offset)

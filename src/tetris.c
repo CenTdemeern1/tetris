@@ -18,63 +18,45 @@
 #include "tetris.h"
 
 static u16 background0[TILEMAP_TILE_NUMBER_32x32];
-static u8 board_width = 10;
-static u8 board_height = 22;
 static struct PlayerGameplayData player1;
 
-void setBackgroundTile(u16 background[TILEMAP_TILE_NUMBER_32x32], u8 x, u8 y, u16 tile)
+void p1SetTile(u8 x, u8 y, enum Tiles tile)
 {
-    background[x + y * 32] = tile;
+    BOARD_INDEX(player1.board, x, y) = (u8)tile;
+    BACKGROUND_TILE_32(background0, x + HORIZONTAL_BOARD_OFFSET, y) = tile != TILE_EMPTY
+                                                                          ? BACKGROUND_TILES[(u8)tile - 1]
+                                                                      : y < SPACE_ABOVE_BOARD
+                                                                          ? BACKGROUND_TILE_EMPTY
+                                                                          : BACKGROUND_TILE_EMPTY_BOARD;
 }
 
-void setTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width, u8 height, u8 x, u8 y, enum Tiles tile)
+enum Tiles p1GetTile(u8 x, u8 y)
 {
-    if (x >= width || y >= height)
-        return;
-    board[x + (y << 4)] = (u8)tile;
-    setBackgroundTile(
-        background,
-        x + HORIZONTAL_BOARD_OFFSET,
-        y,
-        tile != TILE_EMPTY ? BACKGROUND_TILES[(u8)tile - 1] : y < SPACE_ABOVE_BOARD ? BACKGROUND_TILE_EMPTY
-                                                                                    : BACKGROUND_TILE_EMPTY_BOARD);
-}
-
-enum Tiles getTile(u8 board[], u8 width, u8 height, u8 x, u8 y)
-{
-    if (x >= width || y >= height)
+    if (x >= BOARD_WIDTH || y >= BOARD_HEIGHT)
         return TILE_EMPTY;
-    return (enum Tiles)board[x + (y << 4)];
+    return (enum Tiles)BOARD_INDEX(player1.board, x, y);
 }
 
-u16 getOutlineForTile(u8 board[], u8 width, u8 height, u8 x, u8 y)
+u16 p1GetOutlineForTile(u8 x, u8 y)
 {
     u8 pattern = 0;
-    // P = pattern. Temporary definition
-#define P(X, Y) (pattern = (pattern << 1) | ((getTile(board, width, height, x + X, y + Y) != TILE_EMPTY) & 1))
+#define P(X, Y) (pattern = (pattern << 1) | ((p1GetTile(x + X, y + Y) != TILE_EMPTY) & 1))
     FOR_ALL_SURROUNDING(P);
 #undef P
     return outline_table[pattern];
 }
 
-void outlineTile(u8 board[], u16 background[TILEMAP_TILE_NUMBER_32x32], u8 width, u8 height, u8 x, u8 y)
+void p1OutlineTile(u8 x, u8 y)
 {
-    // O = outline. Temporary definition
-#define O(X, Y)                                                                                                       \
-    do                                                                                                                \
-    {                                                                                                                 \
-        if ((u8)(x + X) < width && (u8)(y + Y) < height && getTile(board, width, height, x + X, y + Y) == TILE_EMPTY) \
-            setBackgroundTile(                                                                                        \
-                background,                                                                                           \
-                x + HORIZONTAL_BOARD_OFFSET + X,                                                                      \
-                y + Y,                                                                                                \
-                getOutlineForTile(                                                                                    \
-                    board,                                                                                            \
-                    width,                                                                                            \
-                    height,                                                                                           \
-                    x + X,                                                                                            \
-                    y + Y));                                                                                          \
-    } while (0)
+#define O(X, Y)                                                                                                                              \
+    if ((u8)(x + X) < BOARD_WIDTH && (u8)(y + Y) < BOARD_HEIGHT && (u8)(y + Y) >= SPACE_ABOVE_BOARD && p1GetTile(x + X, y + Y) == TILE_EMPTY) \
+        BACKGROUND_TILE_32(                                                                                                                  \
+            background0,                                                                                                                     \
+            (u8)(x + HORIZONTAL_BOARD_OFFSET + X),                                                                                           \
+            (u8)(y + Y)) =                                                                                                                   \
+            p1GetOutlineForTile(                                                                                                             \
+                x + X,                                                                                                                       \
+                y + Y);
     FOR_ALL_SURROUNDING(O);
 #undef O
 }
@@ -128,22 +110,22 @@ int main(void)
 
     memset(&player1, 0, sizeof(player1));
 
-    setTile(player1.board, background0, board_width, board_height, 1, 20, TILE_CYAN);
-    setTile(player1.board, background0, board_width, board_height, 2, 20, TILE_PURPLE);
-    setTile(player1.board, background0, board_width, board_height, 0, 21, TILE_GREEN);
-    setTile(player1.board, background0, board_width, board_height, 1, 21, TILE_BLUE);
-    setTile(player1.board, background0, board_width, board_height, 7, 20, TILE_YELLOW);
-    setTile(player1.board, background0, board_width, board_height, 8, 20, TILE_RED);
-    setTile(player1.board, background0, board_width, board_height, 8, 21, TILE_GRAY);
-    setTile(player1.board, background0, board_width, board_height, 9, 21, TILE_ORANGE);
-    outlineTile(player1.board, background0, board_width, board_height, 1, 20);
-    outlineTile(player1.board, background0, board_width, board_height, 2, 20);
-    outlineTile(player1.board, background0, board_width, board_height, 0, 21);
-    outlineTile(player1.board, background0, board_width, board_height, 1, 21);
-    outlineTile(player1.board, background0, board_width, board_height, 7, 20);
-    outlineTile(player1.board, background0, board_width, board_height, 8, 20);
-    outlineTile(player1.board, background0, board_width, board_height, 8, 21);
-    outlineTile(player1.board, background0, board_width, board_height, 9, 21);
+    p1SetTile(1, 20, TILE_CYAN);
+    p1SetTile(2, 20, TILE_PURPLE);
+    p1SetTile(0, 21, TILE_GREEN);
+    p1SetTile(1, 21, TILE_BLUE);
+    p1SetTile(7, 20, TILE_YELLOW);
+    p1SetTile(8, 20, TILE_RED);
+    p1SetTile(8, 21, TILE_GRAY);
+    p1SetTile(9, 21, TILE_ORANGE);
+    p1OutlineTile(1, 20);
+    p1OutlineTile(2, 20);
+    p1OutlineTile(0, 21);
+    p1OutlineTile(1, 21);
+    p1OutlineTile(7, 20);
+    p1OutlineTile(8, 20);
+    p1OutlineTile(8, 21);
+    p1OutlineTile(9, 21);
 
     char ident[7] = "\0\0\0\0\0\0";
     strncpy(ident, MSU1_IDENT, 6);
@@ -175,7 +157,7 @@ int main(void)
     player1.board_position.y = 16;
     do
     {
-        p1NextPiece(); // FIXME: This changes sprites and this needs to be called during vblank. This should be refactored
+        p1NextPiece();
     } while (player1.current_piece != TETROMINO_I);
 
     u16 frame_timer = 0;
@@ -189,6 +171,11 @@ int main(void)
         // scanPads(); // ?
         previous_joypad1 = joypad1;
         joypad1 = padsCurrent(0);
+
+        if (joypad1 & KEY_SELECT && (previous_joypad1 & KEY_SELECT) == 0)
+        {
+            p1NextPiece();
+        }
 
         if (joypad1 & KEY_LEFT && (previous_joypad1 & KEY_LEFT) == 0)
         {
@@ -215,7 +202,25 @@ int main(void)
         {
             p1AttemptRotate(-1);
         }
-        player1.rotation &= 0b11;
+        // if ((joypad1 & KEY_X && (previous_joypad1 & KEY_X) == 0) || (joypad1 & KEY_Y && (previous_joypad1 & KEY_Y) == 0))
+        // {
+        //     p1AttemptRotate(2);
+        // }
+
+        if (joypad1 & KEY_START && (previous_joypad1 & KEY_START) == 0)
+        {
+            // BOARD_INDEX(player1.board, player1.mino_positions_x[0], player1.mino_positions_y[0]) = TETROMINO_TILES[player1.current_piece];
+#define L(n)                                                                                                                       \
+    p1SetTile(player1.mino_positions_x[n], player1.mino_positions_y[n], (enum Tiles)(TETROMINO_TILES[player1.current_piece] + 1)); \
+    p1OutlineTile(player1.mino_positions_x[n], player1.mino_positions_y[n]);
+            L(0);
+            L(1);
+            L(2);
+            L(3);
+#undef L
+            p1NextPiece();
+        }
+
         if (joypad1 & KEY_LEFT && move_left_bumped)
         {
             player1.board_offset.x |= 0b0000010000000000;

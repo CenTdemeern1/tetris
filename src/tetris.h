@@ -5,6 +5,11 @@
 #include "vectors.h"
 #include "snes_helpers.h"
 
+#define BOARD_WIDTH 10
+#define BOARD_HEIGHT 22
+#define BOARD_INDEX(board, x, y) ((board)[(u16)(x) + ((u16)(y) << 4)])
+#define BOARD_INDEX_VEC2(board, vec) ((board)[(u16)(vec).x + ((u16)(vec).y << 4)])
+
 enum Tiles
 {
     TILE_EMPTY,

@@ -20,7 +20,7 @@ u8 p1GetNextPiece(u8 next_queue_length, u8 piece_bag_length)
     u8 random_piece_index = rand() % player1.next_queue.pieces_left_in_bag;
     u8 random_piece;
     u8 i;
-    // Finds the random_piece_index-th non-255 item in the piece bag, counting from 0
+    // Finds the random_piece_index-the non-255 item in the piece bag, counting from 0
     for (i = 0; i < piece_bag_length; i++)
     {
         if (player1.next_queue.piece_bag[i] == 255)

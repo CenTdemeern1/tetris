@@ -19,3 +19,5 @@
 #define COLOR_MATH_DESIGNATION_SUB (1 < 7)
 
 #define COLOR_ADDITION_ADD_SUBSCREEN (1 < 1)
+
+#define BACKGROUND_TILE_32(background, x, y) ((background)[(x) + ((y) << 5)])
